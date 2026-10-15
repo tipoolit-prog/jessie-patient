@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<title>ג'סי — הליווי שלי</title>
+<style>
+  :root { --bg:#f6f4ef; --card:#fff; --ink:#26302b; --muted:#5d6a63; --accent:#3d7a63; --accent-ink:#fff; --line:#d9dfda; --warn:#8a5a00; --err:#a3281f; }
+  * { box-sizing: border-box }
+  body { margin:0; background:var(--bg); color:var(--ink); font:1.05rem/1.7 system-ui, "Segoe UI", Arial, sans-serif }
+  main { max-width: 680px; margin: 0 auto; padding: 1rem 1rem 5rem }
+  header { padding: 1rem; text-align: center } header h1 { margin:0; font-size:1.4rem }
+  nav { position: sticky; top:0; display:flex; gap:.4rem; padding:.5rem; background:var(--bg); border-bottom:1px solid var(--line); z-index:1; justify-content:center }
+  nav button { flex:1; max-width:10rem; background:transparent; color:var(--ink); border:1px solid var(--line) }
+  nav button[aria-current="page"] { background:var(--accent); color:var(--accent-ink); border-color:var(--accent) }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem; margin:.8rem 0 }
+  h2 { font-size:1.15rem; margin:.2rem 0 .6rem } h3 { font-size:1rem; margin:.2rem 0 }
+  button, input, textarea { font:inherit; padding:.6rem .9rem; border-radius:10px; border:1px solid var(--line); min-height:44px }
+  button { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); cursor:pointer }
+  button.secondary { background:transparent; color:var(--ink); border-color:var(--line) }
+  button.danger { background:var(--err); border-color:var(--err) }
+  button:focus-visible, input:focus-visible, textarea:focus-visible { outline:3px solid #1b5fa8; outline-offset:2px }
+  button:disabled { opacity:.5; cursor:default }
+  input[type=text], input[type=password], textarea { width:100%; background:#fff }
+  textarea { min-height:5rem } .row { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.6rem }
+  .muted { color:var(--muted); font-size:.95rem } .warn { color:var(--warn) } .err { color:var(--err) } .ok { color:var(--accent) }
+  .banner { background:#fff4d6; border:1px solid #e3c26b; border-radius:10px; padding:.6rem .9rem; margin:.8rem 0; color:#5a4300 }
+  .mono { direction:ltr; unicode-bidi:plaintext; word-break:break-all; font:.8rem/1.4 ui-monospace, Consolas, monospace; background:#f0f2ef; padding:.5rem; border-radius:8px }
+  .msg { background:#e7f2ec; border-radius:10px; padding:.7rem 1rem; margin:.6rem 0; font-weight:600 }
+  .done { border-inline-start:6px solid var(--accent) }
+  [hidden] { display:none !important }
+  @media (prefers-reduced-motion: no-preference) { .card { transition: border-color .2s } }
+</style>
+</head>
+<body>
+<header><h1>ג'סי — הליווי שלי</h1></header>
+<nav id="nav" aria-label="ניווט ראשי" hidden>
+  <button data-tab="today">היום</button>
+  <button data-tab="progress">ההתקדמות שלי</button>
+  <button data-tab="settings">הגדרות</button>
+</nav>
+<main id="main" tabindex="-1">
+  <div id="boot" class="card">טוען…</div>
+  <div id="live" aria-live="polite" class="msg" hidden></div>
+
+  <section id="v-setup" hidden></section>
+  <section id="v-today" hidden></section>
+  <section id="v-progress" hidden></section>
+  <section id="v-settings" hidden></section>
+</main>
+
+<script>
+// Jessie plan-file crypto (shared by the therapist tool and its tests).
+// Format: Ed25519 signature over the exact plan JSON string, then
+// envelope encryption: random AES-256-GCM key wrapped with the device's
+// RSA-2048 public key (RSA-OAEP with SHA-1 / MGF1-SHA-1, so Android Keystore
+// can unwrap it on API 26+; it only ever wraps a random 32-byte key).
+const subtle = globalThis.crypto.subtle;
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+
+const FORMAT = "jessie-plan";
+const FORMAT_VERSION = 1;
+
+const b64 = (buf) => {
+  const bytes = new Uint8Array(buf);
+  let s = "";
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s);
+};
+const unb64 = (str) => Uint8Array.from(atob(str), (c) => c.charCodeAt(0));
+
+async function sha256Hex(text) {
+  const d = await subtle.digest("SHA-256", enc.encode(text));
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// ---- Publisher (verified signer) keys ----
+async function generatePublisherKeys() {
+  const kp = await subtle.generateKey({ name: "Ed25519" }, true, ["sign", "verify"]);
+  return {
+    publicRaw: b64(await subtle.exportKey("raw", kp.publicKey)),
+    privatePkcs8: b64(await subtle.exportKey("pkcs8", kp.privateKey)),
+  };
+}
+
+async function keyId(publicRawB64) {
+  return (await sha256Hex(publicRawB64)).slice(0, 16);
+}
+
+// ---- Plan ----
+function newPlanId() {
+  return globalThis.crypto.randomUUID();
+}
+
+async function buildPlan({ protocolRef, customizations, planId = newPlanId(), planVersion = 1, createdAt = new Date().toISOString() }) {
+  return {
+    schema_version: "1.0",
+    plan_id: planId,
+    plan_version: planVersion,
+    created_at: createdAt,
+    protocol_ref: protocolRef,
+    customizations,
+  };
+}
+
+// The signature covers the exact UTF-8 bytes of planJson, so no canonicalisation is needed.
+async function signPlan(plan, privatePkcs8B64, publicRawB64) {
+  const planJson = JSON.stringify(plan);
+  const key = await subtle.importKey("pkcs8", unb64(privatePkcs8B64), { name: "Ed25519" }, false, ["sign"]);
+  const sig = await subtle.sign({ name: "Ed25519" }, key, enc.encode(planJson));
+  return {
+    planJson,
+    signature: b64(sig),
+    signerKeyId: await keyId(publicRawB64),
+    contentHash: "sha256:" + (await sha256Hex(planJson)),
+  };
+}
+
+async function verifyPlan({ planJson, signature }, publicRawB64) {
+  const key = await subtle.importKey("raw", unb64(publicRawB64), { name: "Ed25519" }, false, ["verify"]);
+  return subtle.verify({ name: "Ed25519" }, key, unb64(signature), enc.encode(planJson));
+}
+
+// ---- Device pairing payload (what the app shows as a QR) ----
+function parsePairing(text) {
+  const p = JSON.parse(text);
+  if (p.t !== "jessie-pair" || p.v !== 1 || !p.device_id || !p.pub) throw new Error("קוד הצמדה לא תקין");
+  return { deviceId: p.device_id, publicSpki: p.pub };
+}
+
+// ---- Envelope encryption ----
+const aad = (deviceId) => enc.encode(`${FORMAT}|${FORMAT_VERSION}|${deviceId}`);
+
+async function encryptPlanFile(signed, devicePublicSpkiB64, deviceId) {
+  const payload = JSON.stringify({
+    plan_json: signed.planJson,
+    signature: signed.signature,
+    signer_key_id: signed.signerKeyId,
+    content_hash: signed.contentHash,
+  });
+  const aes = await subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt"]);
+  const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
+  const ct = await subtle.encrypt({ name: "AES-GCM", iv, additionalData: aad(deviceId) }, aes, enc.encode(payload));
+  const rsa = await subtle.importKey("spki", unb64(devicePublicSpkiB64), { name: "RSA-OAEP", hash: "SHA-1" }, false, ["encrypt"]);
+  const wrapped = await subtle.encrypt({ name: "RSA-OAEP" }, rsa, await subtle.exportKey("raw", aes));
+  return {
+    format: FORMAT,
+    version: FORMAT_VERSION,
+    device_id: deviceId,
+    wrapped_key: b64(wrapped),
+    iv: b64(iv),
+    ciphertext: b64(ct),
+  };
+}
+
+// Reference decryptor (the Android app implements the same steps; used for round-trip tests).
+async function decryptPlanFile(file, devicePrivatePkcs8B64) {
+  if (file.format !== FORMAT || file.version !== FORMAT_VERSION) throw new Error("פורמט קובץ לא נתמך");
+  const rsa = await subtle.importKey("pkcs8", unb64(devicePrivatePkcs8B64), { name: "RSA-OAEP", hash: "SHA-1" }, false, ["decrypt"]);
+  let raw;
+  try {
+    raw = await subtle.decrypt({ name: "RSA-OAEP" }, rsa, unb64(file.wrapped_key));
+  } catch {
+    throw new Error("הקובץ לא תואם למכשיר הזה — ייתכן שהוא נוצר למטופל/ת אחר/ת");
+  }
+  const aes = await subtle.importKey("raw", raw, { name: "AES-GCM" }, false, ["decrypt"]);
+  const pt = await subtle.decrypt({ name: "AES-GCM", iv: unb64(file.iv), additionalData: aad(file.device_id) }, aes, unb64(file.ciphertext));
+  return JSON.parse(dec.decode(pt));
+}
+
+// ---- Password-protected local storage (publisher key + patient cards) ----
+async function pwKey(password, salt) {
+  const base = await subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
+  return subtle.deriveKey({ name: "PBKDF2", salt, iterations: 600000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+
+async function sealWithPassword(obj, password) {
+  const salt = globalThis.crypto.getRandomValues(new Uint8Array(16));
+  const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
+  const ct = await subtle.encrypt({ name: "AES-GCM", iv }, await pwKey(password, salt), enc.encode(JSON.stringify(obj)));
+  return { salt: b64(salt), iv: b64(iv), ct: b64(ct) };
+}
+
+async function openWithPassword(sealed, password) {
+  try {
+    const pt = await subtle.decrypt({ name: "AES-GCM", iv: unb64(sealed.iv) }, await pwKey(password, unb64(sealed.salt)), unb64(sealed.ct));
+    return JSON.parse(dec.decode(pt));
+  } catch {
+    throw new Error("סיסמה שגויה");
+  }
+}
+
+</script>
+<script>
+// Patient-side logic: device pairing, plan import (decrypt -> verify -> validate), progress, reports.
+// Pure functions where possible so they can be tested in Node. UI and IndexedDB live in the template.
+// crypto.js is inlined ahead of this file by build.mjs (import lines are stripped there).
+
+
+
+
+
+
+// ---- Device identity ----
+// Private key is created non-extractable: page JS can use it to decrypt but cannot export it.
+async function createDeviceIdentity() {
+  const kp = await subtle.generateKey(
+    { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-1" },
+    false, ["decrypt"],
+  );
+  return {
+    privateKey: kp.privateKey,
+    deviceId: globalThis.crypto.randomUUID(),
+    publicSpki: b64(await subtle.exportKey("spki", kp.publicKey)),
+  };
+}
+
+// The invite code issued by the therapist is an identifier/label only. It is NOT used for any key derivation,
+// encryption or signature; it just travels in the pairing code so the therapist can match the device to a patient card.
+const INVITE_RE = /^P-[A-Z0-9]{6}$/;
+function normalizeInvite(text) {
+  const c = String(text || "").trim().toUpperCase();
+  if (!INVITE_RE.test(c)) throw new Error("קוד השאלון אינו תקין. הפורמט הצפוי: P- ואחריו 6 תווים (אותיות באנגלית וספרות)");
+  return c;
+}
+const pairingCode = (id, invite) => JSON.stringify({ t: "jessie-pair", v: 1, device_id: id.deviceId, pub: id.publicSpki, ...(invite ? { invite } : {}) });
+
+// ---- Publisher trust (trust-on-first-use of the therapist tool's public key) ----
+async function parsePublisherKey(text) {
+  const raw = text.trim();
+  let bytes;
+  try { bytes = unb64(raw); } catch { throw new Error("המפתח הציבורי אינו תקין"); }
+  if (bytes.length !== 32) throw new Error("המפתח הציבורי אינו תקין (אורך שגוי)");
+  return { publicRaw: raw, keyId: await keyId(raw) };
+}
+
+// ---- Import ----
+const fail = (error) => ({ ok: false, error });
+
+/**
+ * ctx: { privateKey, publisherPublicRaw, installedVersion(planId)->number|null, findProtocol(id, version)->protocol|null }
+ * Nothing is returned as ok unless decryption, signature, hash, schema, version and protocol checks all pass.
+ */
+async function importPlanFile(fileText, ctx) {
+  let file;
+  try { file = JSON.parse(fileText); } catch { return fail("הקובץ אינו קובץ תוכנית תקין של ג'סי"); }
+  if (!file || file.format !== FORMAT || file.version !== FORMAT_VERSION) {
+    return fail("הקובץ אינו קובץ תוכנית תקין של ג'סי, או שהוא מגרסה שאינה נתמכת");
+  }
+  if (typeof file.device_id !== "string" || typeof file.wrapped_key !== "string" || typeof file.iv !== "string" || typeof file.ciphertext !== "string") {
+    return fail("הקובץ אינו קובץ תוכנית תקין של ג'סי");
+  }
+
+  let rawKey;
+  try {
+    rawKey = await subtle.decrypt({ name: "RSA-OAEP" }, ctx.privateKey, unb64(file.wrapped_key));
+  } catch {
+    return fail("הקובץ לא תואם למכשיר הזה — ייתכן שהוא נוצר למטופל/ת אחר/ת, או לקוד הצמדה ישן");
+  }
+  let payload;
+  try {
+    const aes = await subtle.importKey("raw", rawKey, { name: "AES-GCM" }, false, ["decrypt"]);
+    const aad = enc.encode(`${FORMAT}|${FORMAT_VERSION}|${file.device_id}`);
+    payload = JSON.parse(dec.decode(await subtle.decrypt({ name: "AES-GCM", iv: unb64(file.iv), additionalData: aad }, aes, unb64(file.ciphertext))));
+  } catch {
+    return fail("הקובץ פגום או שונה אחרי שנוצר, ולכן לא ניתן לפתוח אותו");
+  }
+
+  if (!ctx.publisherPublicRaw) return fail("עדיין לא הוגדר מפתח ציבורי של המטפל/ת — יש להגדיר אותו לפני ייבוא");
+  const { plan_json: planJson, signature } = payload;
+  if (typeof planJson !== "string" || typeof signature !== "string") return fail("תוכן הקובץ אינו תקין");
+  let valid = false;
+  try { valid = await verifyPlan({ planJson, signature }, ctx.publisherPublicRaw); } catch { valid = false; }
+  if (!valid) return fail("החתימה הדיגיטלית אינה תקינה — הקובץ לא נוצר על ידי המטפל/ת שהוגדר, או ששונה");
+  if (payload.content_hash && payload.content_hash !== "sha256:" + (await sha256Hex(planJson))) {
+    return fail("בדיקת השלמות נכשלה — תוכן התוכנית שונה");
+  }
+
+  let plan;
+  try { plan = JSON.parse(planJson); } catch { return fail("תוכן התוכנית אינו תקין"); }
+  const problem = validatePlan(plan);
+  if (problem) return fail("מבנה התוכנית אינו תקין: " + problem);
+
+  const installed = ctx.installedVersion(plan.plan_id);
+  if (installed != null && plan.plan_version <= installed) {
+    return fail(`גרסת התוכנית בקובץ (${plan.plan_version}) אינה חדשה מהגרסה המותקנת (${installed})`);
+  }
+  const protocol = ctx.findProtocol(plan.protocol_ref.protocol_id, plan.protocol_ref.protocol_version);
+  if (!protocol) return fail("הפרוטוקול שהתוכנית מתבססת עליו אינו קיים בממשק הזה — ייתכן שנדרשת גרסה חדשה של הממשק");
+  return { ok: true, plan, planJson, protocol };
+}
+
+function validatePlan(p) {
+  if (!p || typeof p !== "object") return "אובייקט חסר";
+  if (p.schema_version !== "1.0") return "גרסת סכמה לא נתמכת";
+  if (typeof p.plan_id !== "string" || !p.plan_id) return "plan_id חסר";
+  if (!Number.isInteger(p.plan_version) || p.plan_version < 1) return "plan_version לא תקין";
+  const r = p.protocol_ref;
+  if (!r || typeof r.protocol_id !== "string" || typeof r.protocol_version !== "string") return "protocol_ref חסר";
+  const c = p.customizations;
+  if (!c || !Array.isArray(c.reminder_times) || !c.reminder_times.every((t) => /^([01]\d|2[0-3]):[0-5]\d$/.test(t))) return "reminder_times לא תקין";
+  if (!["daily", "weekly"].includes(c.task_frequency)) return "task_frequency לא תקין";
+  return null;
+}
+
+// ---- Protocol rules ----
+const DEV_MARKER = "DEV-PLACEHOLDER";
+const isDevProtocol = (p) => String(p.approved_by || "").startsWith(DEV_MARKER);
+/** Protocols without approved_by are never usable (same rule as the Android app). */
+const usableProtocols = (all) => all.filter((p) => typeof p.approved_by === "string" && p.approved_by.trim() && Array.isArray(p.stages) && p.stages.length);
+
+function streakFrom(cond) {
+  const m = /(\d+)/.exec(String(cond || ""));
+  return m ? parseInt(m[1], 10) : Infinity;
+}
+
+// ---- Progress state: { stageIndex, stageStartedAt, logs:[{taskId, stageId, status, at}] } ----
+const STATUS = { COMPLETE: "COMPLETE", SKIP: "SKIP", HARD_DAY: "HARD_DAY" };
+
+function newProgress(now = Date.now()) {
+  return { stageIndex: 0, stageStartedAt: now, logs: [] };
+}
+
+const currentStage = (protocol, prog) => protocol.stages[Math.min(prog.stageIndex, protocol.stages.length - 1)];
+
+/** Start of the current period (local midnight for daily, Monday midnight for weekly). */
+function periodStart(freq, now = Date.now()) {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  if (freq === "weekly") d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.getTime();
+}
+
+/** Tasks in protocol order, each marked done if already logged in this period. */
+function tasksForNow(protocol, plan, prog, now = Date.now()) {
+  const stage = currentStage(protocol, prog);
+  const since = periodStart(plan.customizations.task_frequency, now);
+  return stage.tasks.map((t) => {
+    const entry = prog.logs.find((l) => l.taskId === t.task_id && l.stageId === stage.stage_id && l.at >= since);
+    return { ...t, doneStatus: entry ? entry.status : null };
+  });
+}
+
+/** Records a result; returns { progress, message }. Pure: does not mutate the input. */
+function recordResult(protocol, plan, prog, taskId, status, now = Date.now(), pick = Math.random) {
+  const stage = currentStage(protocol, prog);
+  if (!stage.tasks.some((t) => t.task_id === taskId)) throw new Error("משימה לא קיימת בשלב הנוכחי");
+  const next = { ...prog, logs: [...prog.logs, { taskId, stageId: stage.stage_id, status, at: now }] };
+  if (status === STATUS.COMPLETE && next.stageIndex < protocol.stages.length - 1) {
+    const since = next.logs.filter((l) => l.stageId === stage.stage_id && l.at >= next.stageStartedAt);
+    const n = streakFrom(stage.advance_condition);
+    if (since.length >= n && since.slice(-n).every((l) => l.status === STATUS.COMPLETE)) {
+      next.stageIndex += 1;
+      next.stageStartedAt = now;
+    }
+  }
+  let message = null;
+  if (plan.customizations.reinforcement_enabled) {
+    const pool = protocol.reinforcement_pool || {};
+    const list = { COMPLETE: pool.on_complete, SKIP: pool.on_skip, HARD_DAY: pool.on_hard_day }[status] || [];
+    message = list.length ? list[Math.floor(pick() * list.length)] : null;
+  }
+  return { progress: next, message };
+}
+
+/** Descriptive counts only; no scores or grades. */
+function summarize(prog) {
+  const c = { COMPLETE: 0, SKIP: 0, HARD_DAY: 0 };
+  for (const l of prog.logs) c[l.status]++;
+  const days = new Set(prog.logs.filter((l) => l.status === STATUS.COMPLETE).map((l) => new Date(l.at).toDateString()));
+  return { completed: c.COMPLETE, skipped: c.SKIP, hardDays: c.HARD_DAY, activeDays: days.size };
+}
+
+// ---- Report (patient-initiated) ----
+function buildReport(plan, protocol, prog, now = new Date()) {
+  const stageById = Object.fromEntries(protocol.stages.map((s) => [s.stage_id, s.title]));
+  const taskById = Object.fromEntries(protocol.stages.flatMap((s) => s.tasks.map((t) => [s.stage_id + "/" + t.task_id, t.prompt])));
+  return {
+    report_version: 1,
+    exported_at: now.toISOString(),
+    plan_id: plan.plan_id,
+    plan_version: plan.plan_version,
+    protocol: { id: protocol.protocol_id, version: protocol.protocol_version, title: protocol.title },
+    current_stage: currentStage(protocol, prog).title,
+    summary: summarize(prog),
+    entries: prog.logs.map((l) => ({
+      at: new Date(l.at).toISOString(),
+      stage: stageById[l.stageId] || l.stageId,
+      task: taskById[l.stageId + "/" + l.taskId] || l.taskId,
+      status: l.status,
+    })),
+  };
+}
+
+const REPORT_FORMAT = "jessie-report";
+// A password-protected report is { format, version, salt, iv, ct } (see sealWithPassword).
+async function sealReport(report, password) {
+  return { format: REPORT_FORMAT, version: 1, ...(await sealWithPassword(report, password)) };
+}
+async function openReport(file, password) {
+  if (!file || file.format !== REPORT_FORMAT) throw new Error("הקובץ אינו דוח של ג'סי");
+  return openWithPassword(file, password);
+}
+
+</script>
+<script>
+const PROTOCOLS = usableProtocols([{"schema_version":"1.0","protocol_id":"dev-placeholder-exposure","protocol_version":"0.0.1","title":"[DEV] פרוטוקול דמה לפיתוח בלבד","target_population":"בדיקות פיתוח","approved_by":"DEV-PLACEHOLDER — not clinically reviewed","stages":[{"stage_id":"stage-1","title":"שלב בדיקה 1","advance_condition":"3 השלמות רצופות","tasks":[{"task_id":"t1","type":"exercise","prompt":"[DEV] משימת דמה: תאר/י מצב יומיומי קל"},{"task_id":"t2","type":"exercise","prompt":"[DEV] משימת דמה: תרגיל נשימה של דקה"}]}],"reinforcement_pool":{"on_complete":["[DEV] כל הכבוד!"],"on_skip":["[DEV] ננסה שוב מחר."],"on_hard_day":["[DEV] יום קשה הוא חלק מהדרך."]}}]);
+const $ = (id) => document.getElementById(id);
+
+// ---------- Storage: IndexedDB (never localStorage/sessionStorage) with in-memory fallback ----------
+const mem = new Map();
+let idb = null, storageMode = "memory"; // "indexeddb" | "memory"
+function openDb() {
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.open("jessie-patient", 1);
+      req.onupgradeneeded = () => req.result.createObjectStore("kv");
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+      req.onblocked = () => resolve(null);
+    } catch { resolve(null); }
+  });
+}
+const kvGet = (k) => !idb ? Promise.resolve(mem.get(k)) : new Promise((res, rej) => { const r = idb.transaction("kv").objectStore("kv").get(k); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+const kvSet = (k, v) => !idb ? (mem.set(k, v), Promise.resolve()) : new Promise((res, rej) => { const t = idb.transaction("kv", "readwrite"); t.objectStore("kv").put(v, k); t.oncomplete = res; t.onerror = () => rej(t.error); });
+const kvClear = () => { mem.clear(); return !idb ? Promise.resolve() : new Promise((res, rej) => { const t = idb.transaction("kv", "readwrite"); t.objectStore("kv").clear(); t.oncomplete = res; t.onerror = () => rej(t.error); }); };
+
+// ---------- App state ----------
+let device, dataKey, publisher, plan = null, planJson = null, protocol = null, progress = null, tab = "today";
+let invite = null; // questionnaire invite code issued by the therapist (identifier only)
+let demo = null; // non-null while demo mode is active: { saved } holds the real in-memory state to restore
+
+async function saveState() {
+  if (demo) return; // demo mode never writes to storage
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const body = new TextEncoder().encode(JSON.stringify({ planJson, progress }));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, dataKey, body);
+  await kvSet("state", { iv: b64(iv), ct: b64(ct) });
+}
+async function loadState() {
+  const s = await kvGet("state");
+  if (!s) return;
+  try {
+    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(s.iv) }, dataKey, unb64(s.ct));
+    const d = JSON.parse(new TextDecoder().decode(pt));
+    const p = JSON.parse(d.planJson);
+    const proto = PROTOCOLS.find((x) => x.protocol_id === p.protocol_ref.protocol_id && x.protocol_version === p.protocol_ref.protocol_version);
+    if (validatePlan(p) || !proto) throw new Error("state");
+    plan = p; planJson = d.planJson; protocol = proto; progress = d.progress;
+  } catch { announce("לא הצלחנו לפתוח את המידע השמור במכשיר הזה. אפשר למחוק אותו בהגדרות ולייבא את התוכנית מחדש.", true); }
+}
+
+// ---------- DOM helpers (all text via textContent; plan content is never injected as HTML) ----------
+function el(tag, props = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "class") e.className = v; else if (k === "onclick") e.onclick = v; else if (k === "text") e.textContent = v; else e.setAttribute(k, v);
+  }
+  for (const kid of kids.flat()) if (kid != null) e.append(kid);
+  return e;
+}
+const btn = (text, onclick, cls = "") => el("button", { type: "button", class: cls, onclick, text });
+let announceTimer;
+function announce(text, isErr = false) {
+  const n = $("live"); n.textContent = text; n.hidden = false; n.style.color = isErr ? "var(--err)" : "";
+  clearTimeout(announceTimer); announceTimer = setTimeout(() => { n.hidden = true; }, 9000);
+}
+function download(name, text, type) {
+  const a = el("a", { href: URL.createObjectURL(new Blob([text], { type })), download: name });
+  document.body.append(a); a.click(); a.remove();
+}
+const STATUS_HE = { COMPLETE: "בוצע", SKIP: "דילגתי", HARD_DAY: "יום קשה" };
+const fmt = (ms) => new Date(ms).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" });
+
+// ---------- Views ----------
+function show() {
+  $("boot").hidden = true;
+  const hasPlan = !!plan;
+  $("nav").hidden = !hasPlan;
+  for (const v of ["setup", "today", "progress", "settings"]) $("v-" + v).hidden = true;
+  const view = !hasPlan && tab !== "settings" ? "setup" : tab;
+  $("v-" + view).hidden = false;
+  for (const b of $("nav").querySelectorAll("button")) b.toggleAttribute("aria-current", b.dataset.tab === view) || b.removeAttribute("aria-current");
+  for (const b of $("nav").querySelectorAll("button")) if (b.dataset.tab === view) b.setAttribute("aria-current", "page");
+  ({ setup: renderSetup, today: renderToday, progress: renderProgress, settings: renderSettings })[view]();
+}
+document.querySelectorAll("#nav button").forEach((b) => { b.onclick = () => { tab = b.dataset.tab; show(); $("main").focus(); }; });
+
+function storageNotice() {
+  return storageMode === "memory"
+    ? el("div", { class: "banner" }, "הדפדפן הזה לא מאפשר שמירה מקומית (למשל גלישה פרטית). ההתקדמות לא תישמר אחרי סגירת הדף — מומלץ לייצא דוח מדי פעם.")
+    : null;
+}
+
+const reset = (v) => v.replaceChildren(...[demo ? demoBanner() : null, storageNotice()].filter(Boolean));
+
+// ---------- Demo mode ----------
+// Runs the REAL import pipeline (decrypt -> signature -> hash -> schema -> version -> protocol) on a plan that is
+// signed and encrypted right now with throw-away fictional keys. Nothing is written to storage, and the real
+// trusted-publisher key, device key and saved progress are untouched and restored on exit.
+function demoBanner() {
+  return el("div", { class: "banner", role: "note" },
+    el("strong", { text: "מצב הדגמה. " }),
+    "המפתחות, קוד השאלון והנתונים כאן פיקטיביים, נוצרו עכשיו בזיכרון בלבד ולא נשמרים. לא לשימוש טיפולי. ",
+    btn("יציאה מהדגמה", exitDemo, "secondary"));
+}
+async function startDemo() {
+  const proto = PROTOCOLS[0];
+  const fakePublisher = await generatePublisherKeys();          // fictional "therapist" signing key
+  const fakeDevice = await createDeviceIdentity();               // fictional device key (non-extractable)
+  const fakePlan = await buildPlan({
+    protocolRef: { protocol_id: proto.protocol_id, protocol_version: proto.protocol_version },
+    customizations: { task_frequency: "daily", reminder_times: ["09:00", "20:30"], reinforcement_enabled: true, difficulty_level: "moderate",
+      therapist_goals: ["[הדגמה] מטרה לדוגמה"], therapist_notes: "[הדגמה] הערה לדוגמה" },
+  });
+  const signed = await signPlan(fakePlan, fakePublisher.privatePkcs8, fakePublisher.publicRaw);
+  const file = await encryptPlanFile(signed, fakeDevice.publicSpki, fakeDevice.deviceId);
+  const r = await importPlanFile(JSON.stringify(file), {
+    privateKey: fakeDevice.privateKey, publisherPublicRaw: fakePublisher.publicRaw,
+    installedVersion: () => null, findProtocol: (i, v) => PROTOCOLS.find((p) => p.protocol_id === i && p.protocol_version === v) || null,
+  });
+  if (!r.ok) { announce("מצב ההדגמה נכשל: " + r.error, true); return; }
+  demo = { saved: { plan, planJson, protocol, progress, tab } };
+  plan = r.plan; planJson = r.planJson; protocol = r.protocol; progress = newProgress(); tab = "today";
+  announce("מצב הדגמה הופעל"); show();
+}
+function exitDemo() {
+  ({ plan, planJson, protocol, progress, tab } = demo.saved); demo = null;
+  announce("יצאתם ממצב הדגמה"); show();
+}
+
+function renderSetup() {
+  const v = $("v-setup"); reset(v);
+  v.append(el("div", { class: "card" }, el("h2", { text: "ברוכים הבאים" }),
+    el("p", { text: "הממשק הזה פועל רק במכשיר שלכם. הוא לא שולח דבר לאינטרנט. כדי להתחיל, יש לבצע שלושה צעדים עם המטפל/ת." })));
+
+  const pubInput = el("input", { type: "text", id: "pubIn", dir: "ltr", "aria-labelledby": "pubLbl" });
+  const pubMsg = el("p", { class: "muted", id: "pubMsg" });
+  const pubKnown = publisher ? el("p", { class: "ok", text: "מפתח המטפל/ת שהוגדר (טביעת אצבע): " + publisher.keyId }) : null;
+  v.append(el("div", { class: "card" }, el("h2", { id: "pubLbl", text: "1. מפתח המטפל/ת" }),
+    el("p", { class: "muted", text: "המטפל/ת מוסר/ת לכם את המפתח הציבורי שלו/ה (מוצג בכלי המטפל/ת). אפשר לבדוק מולו/ה את טביעת האצבע. רק תוכניות החתומות במפתח הזה יתקבלו." }),
+    pubKnown, pubInput, el("div", { class: "row" }, btn("שמירת המפתח", async () => {
+      try { publisher = await parsePublisherKey(pubInput.value); await kvSet("publisher", publisher); announce("המפתח נשמר"); show(); }
+      catch (e) { pubMsg.textContent = e.message; pubMsg.className = "err"; }
+    })), pubMsg));
+
+  const invIn = el("input", { type: "text", id: "invIn", dir: "ltr", placeholder: "P-ABC123", autocomplete: "off", "aria-labelledby": "invLbl" });
+  const invMsg = el("p", { class: "muted", id: "invMsg" });
+  v.append(el("div", { class: "card" }, el("h2", { id: "invLbl", text: "2. קוד השאלון" }),
+    el("p", { class: "muted", text: "הקוד שהמטפל/ת הנפיק/ה לכם. הוא משמש לזיהוי בלבד, כדי שהמטפל/ת ידע/תדע לאיזה מטופל/ת שייך הקוד, ואינו משמש להצפנה." }),
+    invite ? el("p", { class: "ok", text: "קוד שמור: " + invite }) : null, invIn,
+    el("div", { class: "row" }, btn("שמירת הקוד", async () => {
+      try { invite = normalizeInvite(invIn.value); await kvSet("invite", invite); announce("הקוד נשמר"); show(); }
+      catch (e) { invMsg.textContent = e.message; invMsg.className = "err"; }
+    })), invMsg));
+
+  if (!invite) { v.append(importCard("4. ייבוא תוכנית")); return; }
+  const code = pairingCode(device, invite);
+  v.append(el("div", { class: "card" }, el("h2", { text: "3. קוד הצמדה" }),
+    el("p", { class: "muted", text: "העתיקו את הקוד ומסרו אותו למטפל/ת (בכל ערוץ). אין בו שם או פרט מזהה. הוא נועד לתוכניות חדשות; תוכנית שנוצרה לפי קוד ישן לא תיפתח אחרי מחיקת נתונים." }),
+    el("div", { class: "mono", text: code }),
+    el("div", { class: "row" }, btn("העתקה", async () => { try { await navigator.clipboard.writeText(code); announce("הקוד הועתק"); } catch { announce("ההעתקה נחסמה בדפדפן — סמנו את הקוד ידנית", true); } }, "secondary"))));
+
+  v.append(importCard("4. ייבוא תוכנית"));
+  if (PROTOCOLS.length) v.append(el("div", { class: "card" }, el("h2", { text: "רוצים רק להתרשם?" }),
+    el("p", { class: "muted", text: "מצב הדגמה יוצר תוכנית לדוגמה עם מפתחות פיקטיביים, בזיכרון בלבד. אין בו שימוש במפתחות או בנתונים האמיתיים שלכם, ושום דבר לא נשמר." }),
+    btn("הפעלת מצב הדגמה", startDemo, "secondary")));
+}
+
+function importCard(title) {
+  const input = el("input", { type: "file", id: "planFile", accept: ".jessie,application/octet-stream,application/json", "aria-label": "בחירת קובץ תוכנית" });
+  const status = el("p", { id: "impMsg", class: "muted", "aria-live": "polite" });
+  input.onchange = async () => {
+    const f = input.files[0]; if (!f) return;
+    status.className = "muted"; status.textContent = "בודק את הקובץ…";
+    if (f.size > 1_000_000) { status.className = "err"; status.textContent = "הקובץ גדול מדי להיות קובץ תוכנית"; return; }
+    const r = await importPlanFile(await f.text(), {
+      privateKey: device.privateKey,
+      publisherPublicRaw: publisher && publisher.publicRaw,
+      installedVersion: (id) => (plan && plan.plan_id === id ? plan.plan_version : null),
+      findProtocol: (id, ver) => PROTOCOLS.find((p) => p.protocol_id === id && p.protocol_version === ver) || null,
+    });
+    input.value = "";
+    if (!r.ok) { status.className = "err"; status.textContent = r.error; return; }
+    const sameLine = plan && plan.plan_id === r.plan.plan_id;
+    plan = r.plan; planJson = r.planJson; protocol = r.protocol;
+    if (!sameLine || !progress) progress = newProgress();
+    else if (progress.stageIndex >= protocol.stages.length) progress.stageIndex = protocol.stages.length - 1;
+    await saveState();
+    tab = "today"; announce("התוכנית נקלטה ואומתה"); show();
+  };
+  return el("div", { class: "card" }, el("h2", { text: title }),
+    el("p", { class: "muted", text: "בחרו את קובץ התוכנית (סיומת jessie.) שקיבלתם מהמטפל/ת. הקובץ נבדק לפני כל שימוש: פענוח, חתימה ושלמות." }), input, status);
+}
+
+function renderToday() {
+  const v = $("v-today"); reset(v);
+  if (isDevProtocol(protocol)) v.append(el("div", { class: "banner", role: "note", text: "זהו פרוטוקול פיתוח לבדיקות בלבד. הוא לא נבדק קלינית ואינו מיועד לשימוש טיפולי." }));
+  const stage = currentStage(protocol, progress);
+  const c = plan.customizations;
+  v.append(el("div", { class: "card" }, el("h2", { text: protocol.title }),
+    el("p", { text: "שלב: " + stage.title }),
+    el("p", { class: "muted", text: (c.task_frequency === "daily" ? "משימות יומיות" : "משימות שבועיות") + " · שעות מועדפות לתרגול: " + c.reminder_times.join(", ") + ". הממשק לא שולח תזכורות — אפשר לקבוע אותן בשעון או ביומן של המכשיר." }),
+    c.therapist_goals.length ? el("div", {}, el("h3", { text: "המטרות שלנו" }), el("ul", {}, c.therapist_goals.map((g) => el("li", { text: g })))) : null,
+    c.therapist_notes ? el("p", { text: "הערה מהמטפל/ת: " + c.therapist_notes }) : null));
+
+  const tasks = tasksForNow(protocol, plan, progress);
+  for (const t of tasks) {
+    const done = t.doneStatus != null;
+    const card = el("div", { class: "card" + (done ? " done" : "") }, el("h3", { text: t.prompt }));
+    if (done) card.append(el("p", { class: "ok", text: "נרשם: " + STATUS_HE[t.doneStatus] }));
+    else card.append(el("div", { class: "row", role: "group", "aria-label": "איך היה?" },
+      btn("ביצעתי", () => record(t.task_id, "COMPLETE")),
+      btn("דילגתי", () => record(t.task_id, "SKIP"), "secondary"),
+      btn("היה לי יום קשה", () => record(t.task_id, "HARD_DAY"), "secondary")));
+    v.append(card);
+  }
+  if (tasks.every((t) => t.doneStatus != null)) v.append(el("p", { class: "muted", text: "סיימתם את מה שנקבע לתקופה הזו. אפשר לנוח." }));
+}
+
+async function record(taskId, status) {
+  try {
+    const r = recordResult(protocol, plan, progress, taskId, status);
+    const before = progress.stageIndex;
+    progress = r.progress;
+    await saveState();
+    announce((r.message || "נרשם. תודה.") + (progress.stageIndex > before ? " עברתם לשלב הבא." : ""));
+  } catch (e) { announce(e.message, true); }
+  show();
+}
+
+function renderProgress() {
+  const v = $("v-progress"); reset(v);
+  const s = summarize(progress);
+  v.append(el("div", { class: "card" }, el("h2", { text: "ההתקדמות שלי" }),
+    el("p", { text: `עד עכשיו: ${s.completed} פעמים שביצעתי משימה, ב-${s.activeDays} ימים שונים.` }),
+    el("p", { class: "muted", text: `${s.skipped} פעמים דילגתי · ${s.hardDays} ימים קשים. כל אלה חלק מהדרך — אין כאן ציונים.` }),
+    el("p", { text: `שלב נוכחי: ${currentStage(protocol, progress).title} (${progress.stageIndex + 1} מתוך ${protocol.stages.length})` })));
+  const recent = [...progress.logs].reverse().slice(0, 30);
+  v.append(el("div", { class: "card" }, el("h3", { text: "הרישומים האחרונים" }),
+    recent.length ? el("ul", {}, recent.map((l) => el("li", { text: `${fmt(l.at)} — ${STATUS_HE[l.status]}` }))) : el("p", { class: "muted", text: "עדיין אין רישומים." })));
+}
+
+function renderSettings() {
+  const v = $("v-settings"); reset(v);
+
+  if (plan) {
+    const pw = el("input", { type: "password", id: "repPw", autocomplete: "new-password", "aria-label": "סיסמה להצפנת הדוח" });
+    v.append(el("div", { class: "card" }, el("h2", { text: "ייצוא דוח למטפל/ת" }),
+      el("p", { class: "muted", text: "הדוח נוצר רק כשאתם מבקשים, ונשמר כקובץ במכשיר. האפליקציה לא שולחת אותו לשום מקום — אתם בוחרים אם וכיצד להעביר אותו. הדוח מכיל את תאריכי הרישומים, שמות המשימות והסטטוס שלהן." }),
+      el("label", { for: "repPw", text: "סיסמה להצפנת הדוח (מומלץ; יש למסור אותה למטפל/ת בנפרד מהקובץ)" }), pw,
+      el("div", { class: "row" },
+        btn("ייצוא דוח מוצפן", async () => {
+          if (pw.value.length < 8) { announce("הסיסמה חייבת להכיל לפחות 8 תווים", true); return; }
+          download("jessie-report.enc.json", JSON.stringify(await sealReport(buildReport(plan, protocol, progress), pw.value)), "application/json");
+          announce("הדוח המוצפן נשמר כקובץ");
+        }),
+        btn("ייצוא דוח קריא (לא מוצפן)", () => {
+          if (!confirm("הדוח הקריא אינו מוצפן ומכל מי שיקבל את הקובץ אפשר יהיה לקרוא אותו. להמשיך?")) return;
+          download("jessie-report.json", JSON.stringify(buildReport(plan, protocol, progress), null, 2), "application/json");
+        }, "secondary"))));
+    if (!demo) v.append(importCard("ייבוא עדכון לתוכנית"));
+  }
+
+  const rp = el("input", { type: "password", id: "openPw", autocomplete: "off", "aria-label": "סיסמת הדוח" });
+  const rf = el("input", { type: "file", accept: ".json,application/json", "aria-label": "קובץ דוח מוצפן" });
+  const rOut = el("pre", { class: "mono", hidden: "" });
+  const rMsg = el("p", { class: "muted", "aria-live": "polite" });
+  rf.onchange = async () => {
+    rOut.hidden = true; rMsg.textContent = "";
+    try {
+      const rep = await openReport(JSON.parse(await rf.files[0].text()), rp.value);
+      rOut.textContent = JSON.stringify(rep, null, 2); rOut.hidden = false; rMsg.className = "ok"; rMsg.textContent = "הדוח נפתח";
+    } catch (e) { rMsg.className = "err"; rMsg.textContent = e instanceof SyntaxError ? "הקובץ פגום" : e.message; }
+    rf.value = "";
+  };
+  v.append(el("div", { class: "card" }, el("h2", { text: "פתיחת דוח מוצפן" }),
+    el("p", { class: "muted", text: "למטפל/ת: אפשר לפתוח כאן דוח שהתקבל מהמטופל/ת. הפענוח נעשה במכשיר, בלי אינטרנט." }),
+    el("label", { for: "openPw", text: "סיסמה" }), rp, rf, rMsg, rOut));
+
+  v.append(el("div", { class: "card" }, el("h2", { text: "אבטחה ופרטיות — מה חשוב לדעת" }),
+    el("ul", {}, [
+      "המידע נשמר רק בדפדפן הזה, במכשיר הזה, ומוצפן במפתח שאי אפשר לייצא. עם זאת, המפתח שמור באותו דפדפן — מי שיש לו גישה לחשבון המשתמש במכשיר או לדפדפן עשוי להגיע למידע. לכן מומלץ לנעול את המכשיר.",
+      "אין שרת, אין חשבונות, אין אנליטיקה ואין שליחת מידע. אין אפשרות למחוק או לנעול מרחוק.",
+      "פתיחת הקובץ ישירות מהדיסק (file://) מתנהגת אחרת בדפדפנים שונים: ב-Chrome כל הקבצים המקומיים חולקים אותו מקור, ולכן אין להפעיל קבצי HTML לא מהימנים באותו דפדפן.",
+      "גרסה ראשונה, לא עברה בדיקת אבטחה מקצועית — אין להסתמך עליה כעל הגנה מלאה.",
+    ].map((t) => el("li", { text: t })))));
+
+  if (demo) { v.append(el("div", { class: "card" }, el("h2", { text: "מצב הדגמה" }), el("p", { text: "מחיקת נתונים ושינוי מפתחות אינם זמינים בהדגמה, כדי שלא ייפגע מידע אמיתי. יציאה מההדגמה מוחקת את הנתונים הפיקטיביים מהזיכרון." }), btn("יציאה מהדגמה", exitDemo))); return; }
+  const del = el("div", { class: "card" }, el("h2", { text: "מחיקת הנתונים המקומיים" }),
+    el("p", { text: "המחיקה תסיר מהדפדפן הזה לצמיתות: התוכנית, כל רישומי ההתקדמות, מפתח המטפל/ת שהוגדר, וקוד השאלון שהוזן, והמפתחות של המכשיר (קוד ההצמדה ייווצר מחדש וישתנה). לא יימחקו: קבצים שכבר שמרתם במכשיר (כמו דוחות שייצאתם וקובץ התוכנית שקיבלתם), ומה שמצוי אצל המטפל/ת." }));
+  del.append(btn("מחיקת כל הנתונים", async () => {
+    if (!confirm("למחוק את כל הנתונים המקומיים? לא ניתן לשחזר.")) return;
+    await kvClear(); plan = planJson = protocol = progress = publisher = null; tab = "today";
+    await initIdentity(); announce("הנתונים נמחקו"); show();
+  }, "danger"));
+  v.append(del);
+}
+
+// ---------- Boot ----------
+async function initIdentity() {
+  device = await kvGet("device");
+  if (!device) { device = await createDeviceIdentity(); await kvSet("device", device); }
+  dataKey = await kvGet("dataKey");
+  if (!dataKey) { dataKey = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]); await kvSet("dataKey", dataKey); }
+  publisher = (await kvGet("publisher")) || null;
+  invite = (await kvGet("invite")) || null;
+}
+(async () => {
+  if (!globalThis.crypto || !crypto.subtle) { $("boot").textContent = "הדפדפן או ההקשר הנוכחי לא תומכים בהצפנה הנדרשת (נדרש הקשר מאובטח). נסו דפדפן עדכני."; return; }
+  idb = await openDb();
+  if (idb) {
+    // Verify that non-extractable keys survive structured clone; otherwise fall back to memory-only.
+    try { await kvSet("probe", await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, false, ["encrypt"])); storageMode = "indexeddb"; }
+    catch { idb = null; }
+  }
+  await initIdentity();
+  await loadState();
+  show();
+})().catch((e) => { $("boot").hidden = false; $("boot").textContent = "שגיאה בטעינת הממשק: " + e.message; });
+</script>
+</body>
+</html>
