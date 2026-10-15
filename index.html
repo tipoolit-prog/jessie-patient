@@ -374,6 +374,36 @@ function summarize(prog) {
   return { completed: c.COMPLETE, skipped: c.SKIP, hardDays: c.HARD_DAY, activeDays: days.size };
 }
 
+// ---- Calendar reminders (.ics) ----
+// A local file the patient opens in their calendar app. It carries only a generic title ("תזכורת מג'סי"),
+// never clinical content, because calendars may sync to a cloud account. Floating local times, no timezone.
+const pad = (n) => String(n).padStart(2, "0");
+const icsDate = (d) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+function buildIcs(plan, now = new Date()) {
+  const c = plan.customizations;
+  const stamp = now.toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+  const weekday = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"][now.getDay()];
+  const rrule = c.task_frequency === "weekly" ? `FREQ=WEEKLY;BYDAY=${weekday}` : "FREQ=DAILY";
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Jessie//Reminders//HE", "CALSCALE:GREGORIAN"];
+  for (const t of c.reminder_times) {
+    const [h, m] = t.split(":");
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:jessie-${plan.plan_id}-${h}${m}@jessie.local`,
+      `SEQUENCE:${plan.plan_version}`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART:${icsDate(now)}T${h}${m}00`,
+      "DURATION:PT15M",
+      `RRULE:${rrule}`,
+      "SUMMARY:תזכורת מג'סי",
+      "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:תזכורת", "TRIGGER:PT0M", "END:VALARM",
+      "END:VEVENT",
+    );
+  }
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n") + "\r\n";
+}
+
 // ---- Report (patient-initiated) ----
 function buildReport(plan, protocol, prog, now = new Date()) {
   const stageById = Object.fromEntries(protocol.stages.map((s) => [s.stage_id, s.title]));
@@ -596,6 +626,16 @@ function importCard(title) {
     el("p", { class: "muted", text: "בחרו את קובץ התוכנית (סיומת jessie.) שקיבלתם מהמטפל/ת. הקובץ נבדק לפני כל שימוש: פענוח, חתימה ושלמות." }), input, status);
 }
 
+function icsCard(compact) {
+  const b = btn("הוספת תזכורות ליומן", () => {
+    download("jessie-reminders.ics", buildIcs(plan), "text/calendar");
+    announce("הקובץ נשמר. פתחו אותו כדי להוסיף את התזכורות ליומן.");
+  }, compact ? "secondary" : "");
+  if (compact) return b;
+  return el("div", { class: "card" }, el("h2", { text: "תזכורות ביומן" }),
+    el("p", { class: "muted", text: "הממשק לא יכול לשלוח התראות בעצמו, אבל אפשר ליצור תזכורות חוזרות ביומן של הטלפון, לפי השעות שנקבעו בתוכנית. כותרת התזכורת כללית בלבד (\"תזכורת מג'סי\") ואינה מכילה תוכן טיפולי, כי יומנים עשויים להסתנכרן לחשבון בענן. אחרי ייבוא תוכנית מעודכנת אפשר ליצור את הקובץ מחדש; התזכורות הקיימות יתעדכנו." }), b);
+}
+
 function renderToday() {
   const v = $("v-today"); reset(v);
   if (isDevProtocol(protocol)) v.append(el("div", { class: "banner", role: "note", text: "זהו פרוטוקול פיתוח לבדיקות בלבד. הוא לא נבדק קלינית ואינו מיועד לשימוש טיפולי." }));
@@ -603,10 +643,11 @@ function renderToday() {
   const c = plan.customizations;
   v.append(el("div", { class: "card" }, el("h2", { text: protocol.title }),
     el("p", { text: "שלב: " + stage.title }),
-    el("p", { class: "muted", text: (c.task_frequency === "daily" ? "משימות יומיות" : "משימות שבועיות") + " · שעות מועדפות לתרגול: " + c.reminder_times.join(", ") + ". הממשק לא שולח תזכורות — אפשר לקבוע אותן בשעון או ביומן של המכשיר." }),
+    el("p", { class: "muted", text: (c.task_frequency === "daily" ? "משימות יומיות" : "משימות שבועיות") + " · שעות מועדפות לתרגול: " + c.reminder_times.join(", ") + ". " }),
     c.therapist_goals.length ? el("div", {}, el("h3", { text: "המטרות שלנו" }), el("ul", {}, c.therapist_goals.map((g) => el("li", { text: g })))) : null,
     c.therapist_notes ? el("p", { text: "הערה מהמטפל/ת: " + c.therapist_notes }) : null));
 
+  v.append(icsCard(false));
   const tasks = tasksForNow(protocol, plan, progress);
   for (const t of tasks) {
     const done = t.doneStatus != null;
