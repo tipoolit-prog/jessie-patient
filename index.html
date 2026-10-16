@@ -7,24 +7,34 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
 <title>ג'סי — הליווי שלי</title>
 <style>
-  :root { --bg:#f6f4ef; --card:#fff; --ink:#26302b; --muted:#5d6a63; --accent:#3d7a63; --accent-ink:#fff; --line:#d9dfda; --warn:#8a5a00; --err:#a3281f; }
+  :root { --bg:#f6f4ef; --card:#fff; --ink:#26302b; --muted:#5d6a63; --accent:#3d7a63; --accent-dark:#2f6150; --accent-soft:#e7f2ec; --accent-ink:#fff; --line:#d9dfda; --warn:#8a5a00; --err:#a3281f; --wa:#1a7f4b; }
   * { box-sizing: border-box }
-  body { margin:0; background:var(--bg); color:var(--ink); font:1.05rem/1.7 system-ui, "Segoe UI", Arial, sans-serif }
+  body { margin:0; background:var(--bg); color:var(--ink); font:1.05rem/1.7 system-ui, "Segoe UI", Arial, sans-serif; -webkit-text-size-adjust:100% }
   main { max-width: 680px; margin: 0 auto; padding: 1rem 1rem 5rem }
-  header { padding: 1rem; text-align: center } header h1 { margin:0; font-size:1.4rem }
+  header { background:var(--accent); color:#fff; padding:1rem } header .in { max-width:680px; margin:0 auto; display:flex; align-items:center; gap:.7rem }
+  header h1 { margin:0; font-size:1.3rem } header p { margin:0; opacity:.9; font-size:.95rem }
+  .logo { width:2.6rem; height:2.6rem; border-radius:50%; background:#fff; color:var(--accent); display:grid; place-items:center; font-weight:700; font-size:1.4rem; flex:none }
   nav { position: sticky; top:0; display:flex; gap:.4rem; padding:.5rem; background:var(--bg); border-bottom:1px solid var(--line); z-index:1; justify-content:center }
-  nav button { flex:1; max-width:10rem; background:transparent; color:var(--ink); border:1px solid var(--line) }
-  nav button[aria-current="page"] { background:var(--accent); color:var(--accent-ink); border-color:var(--accent) }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem; margin:.8rem 0 }
-  h2 { font-size:1.15rem; margin:.2rem 0 .6rem } h3 { font-size:1rem; margin:.2rem 0 }
-  button, input, textarea { font:inherit; padding:.6rem .9rem; border-radius:10px; border:1px solid var(--line); min-height:44px }
-  button { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); cursor:pointer }
-  button.secondary { background:transparent; color:var(--ink); border-color:var(--line) }
+  nav button { flex:1; max-width:10rem; background:transparent; color:var(--ink); border:1px solid var(--line); font-weight:500 }
+  nav button[aria-current="page"] { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600 }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:1rem 1.1rem; margin:.9rem 0; box-shadow:0 1px 2px rgba(0,0,0,.04) }
+  h2 { font-size:1.2rem; margin:.2rem 0 .6rem } h3 { font-size:1.05rem; margin:.2rem 0 }
+  button, input, textarea, .btn { font:inherit; padding:.65rem .9rem; border-radius:12px; border:1px solid var(--line); min-height:48px }
+  button, .btn { display:inline-flex; align-items:center; justify-content:center; gap:.45rem; background:var(--accent); color:var(--accent-ink); border-color:var(--accent); cursor:pointer; text-decoration:none; font-weight:600 }
+  button:hover, .btn:hover { background:var(--accent-dark) }
+  .btn.wa { background:var(--wa); border-color:var(--wa) }
+  button.secondary, .btn.secondary { background:transparent; color:var(--ink); border-color:var(--line); font-weight:500 }
   button.danger { background:var(--err); border-color:var(--err) }
-  button:focus-visible, input:focus-visible, textarea:focus-visible { outline:3px solid #1b5fa8; outline-offset:2px }
+  button.big { width:100%; min-height:58px; font-size:1.15rem }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, .btn:focus-visible { outline:3px solid #1b5fa8; outline-offset:2px }
   button:disabled { opacity:.5; cursor:default }
   input[type=text], input[type=password], textarea { width:100%; background:#fff }
-  textarea { min-height:5rem } .row { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.6rem }
+  textarea { min-height:5rem } .row { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.7rem } .row > * { flex:1 1 11rem }
+  .bar { height:10px; border-radius:5px; background:var(--line); overflow:hidden; margin:.5rem 0 } .bar > i { display:block; height:100%; background:var(--accent); border-radius:5px }
+  .steps { display:flex; gap:.4rem; margin:.4rem 0 } .steps span { flex:1; height:6px; border-radius:3px; background:var(--line) } .steps span.on { background:var(--accent) }
+  .hero { background:var(--accent-soft); border-color:var(--accent) } .hero h2 { font-size:1.4rem }
+  details.card summary { cursor:pointer; font-weight:600; min-height:44px; padding:.5rem 0 }
+  .check { display:inline-grid; place-items:center; width:1.6rem; height:1.6rem; border-radius:50%; background:var(--accent); color:#fff; font-size:1rem; margin-inline-end:.4rem }
   .muted { color:var(--muted); font-size:.95rem } .warn { color:var(--warn) } .err { color:var(--err) } .ok { color:var(--accent) }
   .banner { background:#fff4d6; border:1px solid #e3c26b; border-radius:10px; padding:.6rem .9rem; margin:.8rem 0; color:#5a4300 }
   .mono { direction:ltr; unicode-bidi:plaintext; word-break:break-all; font:.8rem/1.4 ui-monospace, Consolas, monospace; background:#f0f2ef; padding:.5rem; border-radius:8px }
@@ -35,7 +45,7 @@
 </style>
 </head>
 <body>
-<header><h1>ג'סי — הליווי שלי</h1></header>
+<header><div class="in"><div class="logo" aria-hidden="true">ג׳</div><div><h1>ג'סי</h1><p>הליווי האישי שלי</p></div></div></header>
 <nav id="nav" aria-label="ניווט ראשי" hidden>
   <button data-tab="today">היום</button>
   <button data-tab="progress">ההתקדמות שלי</button>
@@ -195,6 +205,87 @@ async function openWithPassword(sealed, password) {
 
 </script>
 <script>
+// Personal links (invite / join-response / plan). Shared by the therapist tool, the patient tool and tests.
+// All data travels in the URL fragment (#...), which browsers never send to any server.
+// A link is NOT an access credential: an invite only starts pairing (and is single-use, expiring and revocable
+// by the therapist tool, which is the only verifier); a plan link carries a plan encrypted to one device key.
+
+
+const INVITE_TTL_MS = 72 * 3600 * 1000;
+const BAD_LINK = "הקישור אינו תקין או שנחתך בדרך. בקשו קישור חדש.";
+
+const b64url = (bytes) => b64(bytes).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const unb64url = (s) => unb64(String(s).replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (String(s).length % 4)) % 4));
+const packJson = (o) => b64url(new TextEncoder().encode(JSON.stringify(o)));
+function unpackJson(s) {
+  try { return JSON.parse(new TextDecoder().decode(unb64url(s))); } catch { throw new Error(BAD_LINK); }
+}
+
+const newInviteId = () => b64url(globalThis.crypto.getRandomValues(new Uint8Array(16)));
+
+/** A usable app address: https, or http on a local development host. Returns the address without query/fragment. */
+function cleanBaseUrl(url) {
+  let u;
+  try { u = new URL(String(url).trim()); } catch { throw new Error("כתובת לא תקינה"); }
+  const local = u.hostname === "localhost" || u.hostname === "127.0.0.1" || u.hostname === "[::1]";
+  if (u.protocol !== "https:" && !(u.protocol === "http:" && local)) throw new Error("הכתובת חייבת להתחיל ב-https");
+  return u.origin + u.pathname;
+}
+
+function makeInvite({ publisherPublicRaw, therapistUrl, now = Date.now(), ttl = INVITE_TTL_MS, id = newInviteId() }) {
+  return { id, exp: now + ttl, payload: { v: 1, inv: id, pub: publisherPublicRaw, exp: now + ttl, ret: cleanBaseUrl(therapistUrl) } };
+}
+const inviteLink = (patientUrl, payload) => cleanBaseUrl(patientUrl) + "#join=" + packJson(payload);
+
+function parseInvite(value, now = Date.now()) {
+  const p = unpackJson(value);
+  if (!p || p.v !== 1 || typeof p.inv !== "string" || typeof p.pub !== "string" || typeof p.exp !== "number" || typeof p.ret !== "string") throw new Error(BAD_LINK);
+  try { cleanBaseUrl(p.ret); } catch { throw new Error(BAD_LINK); }
+  if (now > p.exp) throw new Error("תוקף הקישור פג. בקשו מהמטפל/ת קישור חדש.");
+  return p;
+}
+
+const joinResponse = ({ inv, deviceId, publicSpki }) => ({ v: 1, inv, device_id: deviceId, pub: publicSpki });
+const joinLink = (therapistUrl, resp) => cleanBaseUrl(therapistUrl) + "#joined=" + packJson(resp);
+function parseJoinResponse(value) {
+  const p = unpackJson(value);
+  if (!p || p.v !== 1 || typeof p.inv !== "string" || typeof p.device_id !== "string" || typeof p.pub !== "string") throw new Error(BAD_LINK);
+  return p;
+}
+
+const planLink = (patientUrl, file) => cleanBaseUrl(patientUrl) + "#plan=" + packJson(file);
+function parsePlanLink(value) {
+  const f = unpackJson(value);
+  if (!f || typeof f !== "object") throw new Error(BAD_LINK);
+  return f;
+}
+
+/** "#join=abc" -> { kind: "join", value: "abc" }; anything else -> null. */
+function parseHash(hash) {
+  const m = /^#(join|joined|plan)=([A-Za-z0-9_-]+)$/.exec(hash || "");
+  return m ? { kind: m[1], value: m[2] } : null;
+}
+
+const whatsappUrl = (text) => "https://wa.me/?text=" + encodeURIComponent(text);
+
+/**
+ * Therapist-side acceptance of a patient's join response. Pure: returns { error } or { invites, card }.
+ * The invite must exist, be pending, unexpired and not revoked; it becomes single-use ("joined").
+ */
+function acceptJoin(invites, resp, now = Date.now()) {
+  const i = invites.findIndex((x) => x.id === resp.inv);
+  if (i < 0) return { error: "ההזמנה הזו לא נמצאת במאגר הזה. ייתכן שנוצרה בדפדפן אחר או שנמחקה." };
+  const inv = invites[i];
+  if (inv.status === "revoked") return { error: "ההזמנה בוטלה." };
+  if (inv.status === "joined") return { error: "ההזמנה הזו כבר נוצלה." };
+  if (now > inv.exp) return { error: "תוקף ההזמנה פג." };
+  const card = { label: inv.label, deviceId: resp.device_id, publicSpki: resp.pub, joinedAt: now };
+  const next = invites.map((x, j) => (j === i ? { ...x, status: "joined", deviceId: resp.device_id, joinedAt: now } : x));
+  return { invites: next, card };
+}
+
+</script>
+<script>
 // Patient-side logic: device pairing, plan import (decrypt -> verify -> validate), progress, reports.
 // Pure functions where possible so they can be tested in Node. UI and IndexedDB live in the template.
 // crypto.js is inlined ahead of this file by build.mjs (import lines are stripped there).
@@ -238,7 +329,7 @@ async function parsePublisherKey(text) {
 }
 
 // ---- Import ----
-const fail = (error) => ({ ok: false, error });
+const fail = (error, code) => ({ ok: false, error, ...(code ? { code } : {}) });
 
 /**
  * ctx: { privateKey, publisherPublicRaw, installedVersion(planId)->number|null, findProtocol(id, version)->protocol|null }
@@ -286,7 +377,7 @@ async function importPlanFile(fileText, ctx) {
 
   const installed = ctx.installedVersion(plan.plan_id);
   if (installed != null && plan.plan_version <= installed) {
-    return fail(`גרסת התוכנית בקובץ (${plan.plan_version}) אינה חדשה מהגרסה המותקנת (${installed})`);
+    return fail(`גרסת התוכנית בקובץ (${plan.plan_version}) אינה חדשה מהגרסה המותקנת (${installed})`, "stale");
   }
   const protocol = ctx.findProtocol(plan.protocol_ref.protocol_id, plan.protocol_ref.protocol_version);
   if (!protocol) return fail("הפרוטוקול שהתוכנית מתבססת עליו אינו קיים בממשק הזה — ייתכן שנדרשת גרסה חדשה של הממשק");
@@ -402,6 +493,32 @@ function buildIcs(plan, now = new Date()) {
   }
   lines.push("END:VCALENDAR");
   return lines.join("\r\n") + "\r\n";
+}
+
+// ---- Google Calendar event-template link (one click, no OAuth, no account connection) ----
+// The link only pre-fills an event form in the user's own Google Calendar. It creates no notification by itself:
+// the alert that fires is the calendar's default notification for that user.
+function nextOccurrence(time, now = new Date()) {
+  const [h, m] = time.split(":").map(Number);
+  const d = new Date(now);
+  d.setHours(h, m, 0, 0);
+  if (d <= now) d.setDate(d.getDate() + 1);
+  return d;
+}
+function googleCalendarUrl(plan, time, now = new Date(), appUrl = "") {
+  const start = nextOccurrence(time, now);
+  const end = new Date(start.getTime() + 15 * 60000);
+  const g = (d) => `${icsDate(d)}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+  const weekday = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"][start.getDay()];
+  const rule = plan.customizations.task_frequency === "weekly" ? `FREQ=WEEKLY;BYDAY=${weekday}` : "FREQ=DAILY";
+  const q = new URLSearchParams({
+    action: "TEMPLATE",
+    text: "תזכורת מג'סי",
+    dates: `${g(start)}/${g(end)}`,
+    details: appUrl ? "זמן לתרגול הקצר שלכם בג'סי: " + appUrl : "זמן לתרגול הקצר שלכם בג'סי",
+    recur: "RRULE:" + rule,
+  });
+  return "https://calendar.google.com/calendar/render?" + q.toString();
 }
 
 // ---- Report (patient-initiated) ----
@@ -562,10 +679,61 @@ function exitDemo() {
   announce("יצאתם ממצב הדגמה"); show();
 }
 
+// ---------- Joining via the therapist's personal link ----------
+// The link starts pairing only: it carries the therapist's public key, an invite id and an expiry. Keys for this device
+// are created in the background (initIdentity); the patient just taps "join" and sends one WhatsApp message back.
+const appUrl = () => (/^https?:$/.test(location.protocol) ? location.origin + location.pathname : "");
+
+async function confirmJoin() {
+  try {
+    const p = joinPending;
+    if (plan && publisher && publisher.publicRaw !== p.pub && !confirm("כבר יש לכם תוכנית פעילה אצל מטפל/ת אחר/ת. להצטרף למטפל/ת החדש/ה?")) return;
+    publisher = await parsePublisherKey(p.pub); await kvSet("publisher", publisher);
+    const link = joinLink(p.ret, joinResponse({ inv: p.inv, deviceId: device.deviceId, publicSpki: device.publicSpki }));
+    joinedInfo = { link, at: Date.now() }; await kvSet("joined", joinedInfo);
+    joinPending = null; await kvSet("pendingJoin", null);
+    tab = "today"; show();
+  } catch (e) { announce("לא הצלחנו להשלים את ההצטרפות. בקשו מהמטפל/ת קישור חדש.", true); }
+}
+
+function joinCards(v) {
+  if (joinPending) {
+    v.append(el("div", { class: "card hero" }, el("h2", { text: "ברוכים הבאים לג'סי" }),
+      el("p", { text: "המטפל/ת שלכם הזמינו אתכם למרחב אישי לליווי בין הפגישות: משימות קצרות, מעקב עדין אחרי ההתקדמות ותזכורות ליומן." }),
+      el("div", { class: "steps", "aria-hidden": "true" }, el("span", { class: "on" }), el("span"), el("span")),
+      el("p", { class: "muted", text: "ההצטרפות לוקחת רגע. המידע נשמר רק בטלפון הזה, מוצפן, ואין צורך בסיסמה או בחשבון." }),
+      btn("הצטרפות", confirmJoin, "big")));
+    return true;
+  }
+  if (joinedInfo) {
+    const msg = "שלום, הצטרפתי לג'סי. הקישור הזה משלים את החיבור בצד שלך:\n" + joinedInfo.link;
+    v.append(el("div", { class: "card hero" }, el("h2", { text: "כמעט סיימנו" }),
+      el("div", { class: "steps", "aria-hidden": "true" }, el("span", { class: "on" }), el("span", { class: "on" }), el("span")),
+      el("p", { text: "שלחו למטפל/ת הודעה אחת בוואטסאפ, כדי שיוכלו להכין עבורכם תוכנית אישית. ההודעה מוכנה, צריך רק ללחוץ ״שליחה״." }),
+      el("a", { class: "btn wa big", href: whatsappUrl(msg), target: "_blank", rel: "noopener", text: "שליחה למטפל/ת בוואטסאפ" }),
+      el("div", { class: "row" }, btn("העתקת ההודעה", async () => { try { await navigator.clipboard.writeText(msg); announce("ההודעה הועתקה"); } catch { announce("ההעתקה נחסמה בדפדפן. אפשר לשלוח דרך כפתור הוואטסאפ.", true); } }, "secondary")),
+      el("p", { class: "muted", text: "כשהתוכנית תהיה מוכנה, המטפל/ת ישלחו לכם קישור. פתחו אותו מהוואטסאפ ותגיעו ישר למרחב שלכם." })));
+    return true;
+  }
+  return false;
+}
+
 function renderSetup() {
   const v = $("v-setup"); reset(v);
-  v.append(el("div", { class: "card" }, el("h2", { text: "ברוכים הבאים" }),
-    el("p", { text: "הממשק הזה פועל רק במכשיר שלכם. הוא לא שולח דבר לאינטרנט. כדי להתחיל, יש לבצע שלושה צעדים עם המטפל/ת." })));
+  if (!joinCards(v)) {
+    v.append(el("div", { class: "card hero" }, el("h2", { text: "ברוכים הבאים לג'סי" }),
+      el("p", { text: "כדי להתחיל, פתחו את הקישור האישי שהמטפל/ת שלחו לכם בוואטסאפ. הקישור מחבר אתכם למטפל/ת בלחיצה אחת." }),
+      el("p", { class: "muted", text: "הממשק פועל במכשיר שלכם בלבד. לא נשלח ממנו מידע לאינטרנט." })));
+  }
+  const adv = el("details", { class: "card" }, el("summary", { text: "הצטרפות ידנית (מתקדם)" }));
+  v.append(adv);
+  renderManualSetup(adv);
+  if (PROTOCOLS.length) v.append(el("div", { class: "card" }, el("h2", { text: "רוצים רק להתרשם?" }),
+    el("p", { class: "muted", text: "מצב הדגמה יוצר תוכנית לדוגמה עם נתונים פיקטיביים, בזיכרון בלבד. שום דבר לא נשמר." }),
+    btn("הפעלת מצב הדגמה", startDemo, "secondary")));
+}
+
+function renderManualSetup(v) {
 
   const pubInput = el("input", { type: "text", id: "pubIn", dir: "ltr", "aria-labelledby": "pubLbl" });
   const pubMsg = el("p", { class: "muted", id: "pubMsg" });
@@ -595,9 +763,25 @@ function renderSetup() {
     el("div", { class: "row" }, btn("העתקה", async () => { try { await navigator.clipboard.writeText(code); announce("הקוד הועתק"); } catch { announce("ההעתקה נחסמה בדפדפן — סמנו את הקוד ידנית", true); } }, "secondary"))));
 
   v.append(importCard("4. ייבוא תוכנית"));
-  if (PROTOCOLS.length) v.append(el("div", { class: "card" }, el("h2", { text: "רוצים רק להתרשם?" }),
-    el("p", { class: "muted", text: "מצב הדגמה יוצר תוכנית לדוגמה עם מפתחות פיקטיביים, בזיכרון בלבד. אין בו שימוש במפתחות או בנתונים האמיתיים שלכם, ושום דבר לא נשמר." }),
-    btn("הפעלת מצב הדגמה", startDemo, "secondary")));
+}
+
+/** Shared by file import and plan links. Returns { ok } or { ok:false, error, stale }. */
+async function importPlanText(text) {
+  if (!publisher) return { ok: false, error: "כדי לפתוח תוכנית צריך קודם להצטרף דרך קישור ההצטרפות שהמטפל/ת שלחו. בקשו מהם קישור חדש אם צריך." };
+  const r = await importPlanFile(text, {
+    privateKey: device.privateKey,
+    publisherPublicRaw: publisher.publicRaw,
+    installedVersion: (id) => (plan && plan.plan_id === id ? plan.plan_version : null),
+    findProtocol: (id, ver) => PROTOCOLS.find((p) => p.protocol_id === id && p.protocol_version === ver) || null,
+  });
+  if (!r.ok) return { ok: false, error: r.error, stale: r.code === "stale" };
+  const sameLine = plan && plan.plan_id === r.plan.plan_id;
+  plan = r.plan; planJson = r.planJson; protocol = r.protocol;
+  if (!sameLine || !progress) progress = newProgress();
+  else if (progress.stageIndex >= protocol.stages.length) progress.stageIndex = protocol.stages.length - 1;
+  if (joinedInfo) { joinedInfo = null; await kvSet("joined", null); }
+  await saveState();
+  return { ok: true };
 }
 
 function importCard(title) {
@@ -607,33 +791,32 @@ function importCard(title) {
     const f = input.files[0]; if (!f) return;
     status.className = "muted"; status.textContent = "בודק את הקובץ…";
     if (f.size > 1_000_000) { status.className = "err"; status.textContent = "הקובץ גדול מדי להיות קובץ תוכנית"; return; }
-    const r = await importPlanFile(await f.text(), {
-      privateKey: device.privateKey,
-      publisherPublicRaw: publisher && publisher.publicRaw,
-      installedVersion: (id) => (plan && plan.plan_id === id ? plan.plan_version : null),
-      findProtocol: (id, ver) => PROTOCOLS.find((p) => p.protocol_id === id && p.protocol_version === ver) || null,
-    });
+    const r = await importPlanText(await f.text());
     input.value = "";
     if (!r.ok) { status.className = "err"; status.textContent = r.error; return; }
-    const sameLine = plan && plan.plan_id === r.plan.plan_id;
-    plan = r.plan; planJson = r.planJson; protocol = r.protocol;
-    if (!sameLine || !progress) progress = newProgress();
-    else if (progress.stageIndex >= protocol.stages.length) progress.stageIndex = protocol.stages.length - 1;
-    await saveState();
     tab = "today"; announce("התוכנית נקלטה ואומתה"); show();
   };
   return el("div", { class: "card" }, el("h2", { text: title }),
     el("p", { class: "muted", text: "בחרו את קובץ התוכנית (סיומת jessie.) שקיבלתם מהמטפל/ת. הקובץ נבדק לפני כל שימוש: פענוח, חתימה ושלמות." }), input, status);
 }
 
-function icsCard(compact) {
-  const b = btn("הוספת תזכורות ליומן", () => {
-    download("jessie-reminders.ics", buildIcs(plan), "text/calendar");
-    announce("הקובץ נשמר. פתחו אותו כדי להוסיף את התזכורות ליומן.");
-  }, compact ? "secondary" : "");
-  if (compact) return b;
+function icsCard() {
+  const times = plan.customizations.reminder_times;
+  const weekly = plan.customizations.task_frequency === "weekly";
+  const gcal = times.map((t) => el("a", {
+    class: "btn", href: googleCalendarUrl(plan, t, new Date(), appUrl()), target: "_blank", rel: "noopener",
+    text: "📅 הוספה ליומן Google · " + t,
+  }));
   return el("div", { class: "card" }, el("h2", { text: "תזכורות ביומן" }),
-    el("p", { class: "muted", text: "הממשק לא יכול לשלוח התראות בעצמו, אבל אפשר ליצור תזכורות חוזרות ביומן של הטלפון, לפי השעות שנקבעו בתוכנית. כותרת התזכורת כללית בלבד (\"תזכורת מג'סי\") ואינה מכילה תוכן טיפולי, כי יומנים עשויים להסתנכרן לחשבון בענן. אחרי ייבוא תוכנית מעודכנת אפשר ליצור את הקובץ מחדש; התזכורות הקיימות יתעדכנו." }), b);
+    el("p", { text: (weekly ? "תזכורת שבועית" : "תזכורת יומית") + " בשעות שקבע המטפל/ת. בלחיצה נפתח היומן עם התאריך, השעה והחזרה כבר מלאים, ונשאר ללחוץ ״שמירה״." }),
+    el("div", { class: "row" }, gcal),
+    el("p", { class: "muted", text: "אין צורך לחבר חשבון, וג'סי לא מקבלת גישה ליומן שלכם. אם Google יבקש להיכנס, זה רק כדי לשמור את האירוע בחשבון שלכם. כותרת התזכורת כללית (\"תזכורת מג'סי\") וללא תוכן טיפולי." }),
+    el("p", { class: "muted", text: "שימו לב: שמירת אירוע לא מבטיחה צלצול. בטלפון ודאו שהתראות היומן מופעלות, ובאירוע עצמו אפשר להוסיף התראה בזמן שנוח לכם." }),
+    el("details", {}, el("summary", { text: "יומן אחר (Apple, Outlook)" }),
+      btn("הורדת קובץ ליומן", () => {
+        download("jessie-reminders.ics", buildIcs(plan), "text/calendar");
+        announce("הקובץ נשמר. פתחו אותו כדי להוסיף את התזכורות ליומן.");
+      }, "secondary")));
 }
 
 function renderToday() {
@@ -641,14 +824,15 @@ function renderToday() {
   if (isDevProtocol(protocol)) v.append(el("div", { class: "banner", role: "note", text: "זהו פרוטוקול פיתוח לבדיקות בלבד. הוא לא נבדק קלינית ואינו מיועד לשימוש טיפולי." }));
   const stage = currentStage(protocol, progress);
   const c = plan.customizations;
-  v.append(el("div", { class: "card" }, el("h2", { text: protocol.title }),
+  const tasks = tasksForNow(protocol, plan, progress);
+  const doneCount = tasks.filter((t) => t.doneStatus != null).length;
+  v.append(el("div", { class: "card hero" }, el("h2", { text: protocol.title }),
     el("p", { text: "שלב: " + stage.title }),
-    el("p", { class: "muted", text: (c.task_frequency === "daily" ? "משימות יומיות" : "משימות שבועיות") + " · שעות מועדפות לתרגול: " + c.reminder_times.join(", ") + ". " }),
+    el("div", { class: "bar", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": String(tasks.length), "aria-valuenow": String(doneCount), "aria-label": "משימות שבוצעו" }, el("i", { style: `width:${tasks.length ? Math.round((doneCount / tasks.length) * 100) : 0}%` })),
+    el("p", { class: "muted", text: `${doneCount} מתוך ${tasks.length} משימות ${c.task_frequency === "daily" ? "להיום" : "לשבוע הזה"} · שעות מועדפות: ${c.reminder_times.join(", ")}` }),
     c.therapist_goals.length ? el("div", {}, el("h3", { text: "המטרות שלנו" }), el("ul", {}, c.therapist_goals.map((g) => el("li", { text: g })))) : null,
     c.therapist_notes ? el("p", { text: "הערה מהמטפל/ת: " + c.therapist_notes }) : null));
 
-  v.append(icsCard(false));
-  const tasks = tasksForNow(protocol, plan, progress);
   for (const t of tasks) {
     const done = t.doneStatus != null;
     const card = el("div", { class: "card" + (done ? " done" : "") }, el("h3", { text: t.prompt }));
@@ -660,6 +844,7 @@ function renderToday() {
     v.append(card);
   }
   if (tasks.every((t) => t.doneStatus != null)) v.append(el("p", { class: "muted", text: "סיימתם את מה שנקבע לתקופה הזו. אפשר לנוח." }));
+  v.append(icsCard());
 }
 
 async function record(taskId, status) {
@@ -735,7 +920,7 @@ function renderSettings() {
     el("p", { text: "המחיקה תסיר מהדפדפן הזה לצמיתות: התוכנית, כל רישומי ההתקדמות, מפתח המטפל/ת שהוגדר, וקוד השאלון שהוזן, והמפתחות של המכשיר (קוד ההצמדה ייווצר מחדש וישתנה). לא יימחקו: קבצים שכבר שמרתם במכשיר (כמו דוחות שייצאתם וקובץ התוכנית שקיבלתם), ומה שמצוי אצל המטפל/ת." }));
   del.append(btn("מחיקת כל הנתונים", async () => {
     if (!confirm("למחוק את כל הנתונים המקומיים? לא ניתן לשחזר.")) return;
-    await kvClear(); plan = planJson = protocol = progress = publisher = null; tab = "today";
+    await kvClear(); plan = planJson = protocol = progress = publisher = joinPending = joinedInfo = null; tab = "today";
     await initIdentity(); announce("הנתונים נמחקו"); show();
   }, "danger"));
   v.append(del);
@@ -749,6 +934,27 @@ async function initIdentity() {
   if (!dataKey) { dataKey = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]); await kvSet("dataKey", dataKey); }
   publisher = (await kvGet("publisher")) || null;
   invite = (await kvGet("invite")) || null;
+  joinPending = (await kvGet("pendingJoin")) || null;
+  joinedInfo = (await kvGet("joined")) || null;
+}
+
+// Links from WhatsApp. The fragment is read once and removed from the address bar; it never reaches a server.
+async function handleLink() {
+  const h = parseHash(location.hash);
+  if (!h) return;
+  history.replaceState(null, "", location.pathname + location.search);
+  try {
+    if (h.kind === "join") {
+      const p = parseInvite(h.value);
+      if (publisher && publisher.publicRaw === p.pub && (plan || joinedInfo)) { announce("אתם כבר מחוברים למטפל/ת הזה."); return; }
+      joinPending = p; await kvSet("pendingJoin", p);
+    } else if (h.kind === "plan") {
+      const r = await importPlanText(JSON.stringify(parsePlanLink(h.value)));
+      if (r.ok) { tab = "today"; announce("התוכנית שלכם מוכנה. בהצלחה!"); }
+      else if (r.stale) announce("התוכנית הזו כבר אצלכם.");
+      else announce(r.error, true);
+    } else announce("הקישור הזה מיועד למטפל/ת. בקשו מהמטפל/ת קישור אישי חדש.", true);
+  } catch (e) { announce(e.message, true); }
 }
 (async () => {
   if (!globalThis.crypto || !crypto.subtle) { $("boot").textContent = "הדפדפן או ההקשר הנוכחי לא תומכים בהצפנה הנדרשת (נדרש הקשר מאובטח). נסו דפדפן עדכני."; return; }
@@ -760,7 +966,9 @@ async function initIdentity() {
   }
   await initIdentity();
   await loadState();
+  await handleLink();
   show();
+  addEventListener("hashchange", async () => { await handleLink(); show(); }); // link tapped while the app is already open
 })().catch((e) => { $("boot").hidden = false; $("boot").textContent = "שגיאה בטעינת הממשק: " + e.message; });
 </script>
 </body>
