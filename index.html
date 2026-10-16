@@ -4,62 +4,103 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="theme-color" content="#5b3a9e">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
 <title>ג'סי — הליווי שלי</title>
 <style>
-  :root { --bg:#f6f4ef; --card:#fff; --ink:#26302b; --muted:#5d6a63; --accent:#3d7a63; --accent-dark:#2f6150; --accent-soft:#e7f2ec; --accent-ink:#fff; --line:#d9dfda; --warn:#8a5a00; --err:#a3281f; --wa:#1a7f4b; }
+  /* Palette: deep purple, lilac, peach, cream. Change colors here only. */
+  :root { --bg:#fbf6f0; --card:#fff; --ink:#2b2140; --muted:#675c7a; --accent:#5b3a9e; --accent-dark:#46298a; --accent-ink:#fff; --lilac:#efe8fb; --lilac-2:#d8c9f3; --peach:#ffe6d6; --peach-ink:#8a4a22; --line:#e4ddef; --warn:#7a4f00; --err:#a3281f; --wa:#17784a; --radius:18px; }
   * { box-sizing: border-box }
   body { margin:0; background:var(--bg); color:var(--ink); font:1.05rem/1.7 system-ui, "Segoe UI", Arial, sans-serif; -webkit-text-size-adjust:100% }
-  main { max-width: 680px; margin: 0 auto; padding: 1rem 1rem 5rem }
-  header { background:var(--accent); color:#fff; padding:1rem } header .in { max-width:680px; margin:0 auto; display:flex; align-items:center; gap:.7rem }
-  header h1 { margin:0; font-size:1.3rem } header p { margin:0; opacity:.9; font-size:.95rem }
-  .logo { width:2.6rem; height:2.6rem; border-radius:50%; background:#fff; color:var(--accent); display:grid; place-items:center; font-weight:700; font-size:1.4rem; flex:none }
-  nav { position: sticky; top:0; display:flex; gap:.4rem; padding:.5rem; background:var(--bg); border-bottom:1px solid var(--line); z-index:1; justify-content:center }
-  nav button { flex:1; max-width:10rem; background:transparent; color:var(--ink); border:1px solid var(--line); font-weight:500 }
-  nav button[aria-current="page"] { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600 }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:1rem 1.1rem; margin:.9rem 0; box-shadow:0 1px 2px rgba(0,0,0,.04) }
+  .shell { display:flex; min-height:100vh }
+  .side { width:15.5rem; flex:none; background:var(--card); border-inline-end:1px solid var(--line); padding:1.2rem .9rem; position:sticky; top:0; height:100vh; display:flex; flex-direction:column; gap:.4rem }
+  .brand { display:flex; align-items:center; gap:.6rem; padding:.2rem .4rem 1rem }
+  .logo { width:2.8rem; height:2.8rem; border-radius:50%; background:var(--accent); color:#fff; display:grid; place-items:center; font-weight:700; font-size:1.5rem; flex:none; overflow:hidden }
+  .logo img { width:100%; height:100%; object-fit:cover }
+  .brand b { display:block; font-size:1.25rem; line-height:1.2 } .brand span { font-size:.9rem; color:var(--muted) }
+  nav { display:flex; flex-direction:column; gap:.3rem }
+  nav button { display:flex; align-items:center; gap:.7rem; justify-content:flex-start; min-height:48px; padding:.5rem .9rem; border:0; border-radius:14px; background:transparent; color:var(--ink); font-weight:500 }
+  nav button .ic { font-size:1.25rem; width:1.6rem; text-align:center }
+  nav button[aria-current="page"] { background:var(--accent); color:var(--accent-ink); font-weight:600 }
+  nav button:not([aria-current]):hover { background:var(--lilac) }
+  .content { flex:1; min-width:0 }
+  .top { display:flex; justify-content:space-between; align-items:center; gap:.6rem; padding:.8rem 1rem; max-width:760px; margin:0 auto }
+  .top .brand { padding:0 } .side .help-btn { margin-top:auto }
+  .top .brand-m, .top .sos { display:none }
+  main { max-width:760px; margin:0 auto; padding:0 1rem 6rem }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:1rem 1.1rem; margin:.9rem 0; box-shadow:0 1px 2px rgba(60,30,110,.05) }
   h2 { font-size:1.2rem; margin:.2rem 0 .6rem } h3 { font-size:1.05rem; margin:.2rem 0 }
-  button, input, textarea, .btn { font:inherit; padding:.65rem .9rem; border-radius:12px; border:1px solid var(--line); min-height:48px }
+  button, input, textarea, .btn { font:inherit; padding:.65rem .9rem; border-radius:14px; border:1px solid var(--line); min-height:48px }
   button, .btn { display:inline-flex; align-items:center; justify-content:center; gap:.45rem; background:var(--accent); color:var(--accent-ink); border-color:var(--accent); cursor:pointer; text-decoration:none; font-weight:600 }
   button:hover, .btn:hover { background:var(--accent-dark) }
   .btn.wa { background:var(--wa); border-color:var(--wa) }
-  button.secondary, .btn.secondary { background:transparent; color:var(--ink); border-color:var(--line); font-weight:500 }
+  button.secondary, .btn.secondary { background:transparent; color:var(--ink); border-color:var(--lilac-2); font-weight:500 }
+  button.secondary:hover { background:var(--lilac) }
   button.danger { background:var(--err); border-color:var(--err) }
-  button.big { width:100%; min-height:58px; font-size:1.15rem }
-  button:focus-visible, input:focus-visible, textarea:focus-visible, .btn:focus-visible { outline:3px solid #1b5fa8; outline-offset:2px }
+  button.big, .btn.big { width:100%; min-height:58px; font-size:1.15rem }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, .btn:focus-visible, summary:focus-visible { outline:3px solid #1b5fa8; outline-offset:2px }
   button:disabled { opacity:.5; cursor:default }
   input[type=text], input[type=password], textarea { width:100%; background:#fff }
-  textarea { min-height:5rem } .row { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.7rem } .row > * { flex:1 1 11rem }
-  .bar { height:10px; border-radius:5px; background:var(--line); overflow:hidden; margin:.5rem 0 } .bar > i { display:block; height:100%; background:var(--accent); border-radius:5px }
-  .steps { display:flex; gap:.4rem; margin:.4rem 0 } .steps span { flex:1; height:6px; border-radius:3px; background:var(--line) } .steps span.on { background:var(--accent) }
-  .hero { background:var(--accent-soft); border-color:var(--accent) } .hero h2 { font-size:1.4rem }
+  textarea { min-height:5rem } .row { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.7rem } .row > * { flex:1 1 10rem }
+  .muted { color:var(--muted); font-size:.95rem } .warn { color:var(--warn) } .err { color:var(--err) } .ok { color:var(--accent-dark) }
+  .banner { background:var(--peach); border:1px solid #f0c3a6; border-radius:14px; padding:.6rem .9rem; margin:.8rem 0; color:var(--peach-ink) }
+  .mono { direction:ltr; unicode-bidi:plaintext; word-break:break-all; font:.8rem/1.4 ui-monospace, Consolas, monospace; background:var(--lilac); padding:.5rem; border-radius:10px }
+  .msg { background:var(--lilac); border:1px solid var(--lilac-2); border-radius:14px; padding:.7rem 1rem; margin:.6rem 0; font-weight:600 }
+  .done { border-inline-start:6px solid var(--accent) }
+  .bar { height:10px; border-radius:5px; background:var(--lilac); overflow:hidden; margin:.5rem 0 } .bar > i { display:block; height:100%; background:var(--accent); border-radius:5px }
+  .steps { display:flex; gap:.4rem; margin:.4rem 0 } .steps span { flex:1; height:6px; border-radius:3px; background:var(--lilac-2) } .steps span.on { background:var(--accent) }
+  .hero { background:linear-gradient(135deg, var(--lilac) 0%, var(--peach) 100%); border-color:var(--lilac-2); position:relative; overflow:hidden }
+  .hero h2 { font-size:1.5rem; margin-bottom:.1rem } .hero .quote { font-style:italic; color:var(--muted); margin:.3rem 0 .6rem }
+  .hero-row { display:flex; gap:1rem; align-items:center } .hero-row > div { flex:1; min-width:0 }
+  .hero-img { width:7.5rem; height:9rem; flex:none; border-radius:16px; object-fit:cover }
+  .chip { display:inline-flex; gap:.35rem; align-items:center; background:#fff; border:1px solid var(--lilac-2); border-radius:999px; padding:.15rem .8rem; font-weight:600; color:var(--accent-dark); font-size:.95rem }
+  .stats { display:flex; gap:1rem; align-items:center } .ring { flex:none }
+  .week { display:flex; gap:.45rem; align-items:flex-end; height:5rem; flex:1 } .week div { flex:1; text-align:center; font-size:.8rem; color:var(--muted); display:flex; flex-direction:column; justify-content:flex-end; gap:.2rem } .week i { display:block; border-radius:6px; background:var(--lilac-2); min-height:6px } .week i.on { background:var(--accent) }
   details.card summary { cursor:pointer; font-weight:600; min-height:44px; padding:.5rem 0 }
   .check { display:inline-grid; place-items:center; width:1.6rem; height:1.6rem; border-radius:50%; background:var(--accent); color:#fff; font-size:1rem; margin-inline-end:.4rem }
-  .muted { color:var(--muted); font-size:.95rem } .warn { color:var(--warn) } .err { color:var(--err) } .ok { color:var(--accent) }
-  .banner { background:#fff4d6; border:1px solid #e3c26b; border-radius:10px; padding:.6rem .9rem; margin:.8rem 0; color:#5a4300 }
-  .mono { direction:ltr; unicode-bidi:plaintext; word-break:break-all; font:.8rem/1.4 ui-monospace, Consolas, monospace; background:#f0f2ef; padding:.5rem; border-radius:8px }
-  .msg { background:#e7f2ec; border-radius:10px; padding:.7rem 1rem; margin:.6rem 0; font-weight:600 }
-  .done { border-inline-start:6px solid var(--accent) }
+  .sos { background:#fff; border:1px solid var(--lilac-2); color:var(--accent-dark); font-weight:600; min-height:44px }
+  .sos:hover { background:var(--lilac) }
   [hidden] { display:none !important }
-  @media (prefers-reduced-motion: no-preference) { .card { transition: border-color .2s } }
+  @media (max-width: 799px) {
+    .shell { display:block }
+    .side { position:fixed; inset:auto 0 0 0; width:auto; height:auto; flex-direction:row; padding:.3rem .5rem calc(.3rem + env(safe-area-inset-bottom)); border-inline-end:0; border-top:1px solid var(--line); z-index:5; justify-content:center }
+    .side .brand, .side .help-btn { display:none }
+    nav { flex-direction:row; width:100%; max-width:30rem; gap:.2rem } nav button { flex:1; flex-direction:column; gap:.1rem; padding:.3rem .2rem; min-height:56px; font-size:.82rem; justify-content:center }
+    .top .brand-m { display:flex } .top .sos { display:inline-flex }
+    .hero-img { width:5.5rem; height:7rem }
+  }
+  @media (prefers-reduced-motion: no-preference) { .card { transition: border-color .2s } .bar > i { transition: width .4s ease } }
 </style>
 </head>
 <body>
-<header><div class="in"><div class="logo" aria-hidden="true">ג׳</div><div><h1>ג'סי</h1><p>הליווי האישי שלי</p></div></div></header>
-<nav id="nav" aria-label="ניווט ראשי" hidden>
-  <button data-tab="today">היום</button>
-  <button data-tab="progress">ההתקדמות שלי</button>
-  <button data-tab="settings">הגדרות</button>
-</nav>
-<main id="main" tabindex="-1">
-  <div id="boot" class="card">טוען…</div>
-  <div id="live" aria-live="polite" class="msg" hidden></div>
+<div class="shell">
+  <aside class="side" id="side">
+    <div class="brand"><div class="logo" id="logoD" aria-hidden="true">ג׳</div><div><b id="brandNameD"></b><span id="taglineD"></span></div></div>
+    <nav id="nav" aria-label="ניווט ראשי" hidden>
+      <button data-tab="today"><span class="ic" aria-hidden="true">🏠</span>היום</button>
+      <button data-tab="progress"><span class="ic" aria-hidden="true">📈</span>ההתקדמות שלי</button>
+      <button data-tab="settings"><span class="ic" aria-hidden="true">⚙️</span>הגדרות</button>
+    </nav>
+    <button class="sos help-btn" id="helpD" type="button">🆘 עזרה מיידית</button>
+  </aside>
+  <div class="content">
+    <div class="top">
+      <div class="brand brand-m"><div class="logo" id="logoM" aria-hidden="true">ג׳</div><div><b id="brandNameM"></b><span id="taglineM"></span></div></div>
+      <span></span>
+      <button class="sos" id="helpM" type="button">🆘 עזרה מיידית</button>
+    </div>
+    <main id="main" tabindex="-1">
+      <div id="boot" class="card">טוען…</div>
+      <div id="live" aria-live="polite" class="msg" hidden></div>
 
-  <section id="v-setup" hidden></section>
-  <section id="v-today" hidden></section>
-  <section id="v-progress" hidden></section>
-  <section id="v-settings" hidden></section>
-</main>
+      <section id="v-setup" hidden></section>
+      <section id="v-today" hidden></section>
+      <section id="v-progress" hidden></section>
+      <section id="v-settings" hidden></section>
+      <section id="v-help" hidden></section>
+    </main>
+  </div>
+</div>
 
 <script>
 // Jessie plan-file crypto (shared by the therapist tool and its tests).
@@ -286,9 +327,46 @@ function acceptJoin(invites, resp, now = Date.now()) {
 
 </script>
 <script>
+// Reward mechanism: separate from clinical content so every protocol can share it.
+// Approved principle: an attempt earns 10; a success on that same challenge adds 2 (total 12, never 22).
+// Points are never deducted for difficulty or lack of success. Nothing here is a money value, purchase or perk.
+// Entries live in the encrypted progress state as `ledger: [{ at, type, points }]`.
+const REWARD_RULES = {
+  attempt: 10,
+  success: 2,
+  // Engagement rewards are moderate. Only dailyOpen is wired in v1; the rest are defined for later and stay off.
+  engagement: {
+    dailyOpen: { points: 1, enabled: true },
+    readTask: { points: 1, enabled: false },
+    optionalShare: { points: 2, enabled: false }, // never required; free text alone never earns points
+  },
+};
+
+/** Points for one task result. COMPLETE = attempt + success; ATTEMPT = attempt only; others earn nothing (and never cost). */
+function taskEntries(status, now = Date.now(), rules = REWARD_RULES) {
+  if (status === "COMPLETE") return [{ at: now, type: "attempt", points: rules.attempt }, { at: now, type: "success", points: rules.success }];
+  if (status === "ATTEMPT") return [{ at: now, type: "attempt", points: rules.attempt }];
+  return [];
+}
+
+const totalPoints = (ledger) => (ledger || []).reduce((n, e) => n + Math.max(0, e.points || 0), 0);
+
+const dayKey = (ms) => new Date(ms).toDateString();
+
+/** One small reward per local day for opening the app, or null if already given / disabled. */
+function dailyOpenEntry(ledger, now = Date.now(), rules = REWARD_RULES) {
+  const r = rules.engagement.dailyOpen;
+  if (!r || !r.enabled) return null;
+  if ((ledger || []).some((e) => e.type === "dailyOpen" && dayKey(e.at) === dayKey(now))) return null;
+  return { at: now, type: "dailyOpen", points: r.points };
+}
+
+</script>
+<script>
 // Patient-side logic: device pairing, plan import (decrypt -> verify -> validate), progress, reports.
 // Pure functions where possible so they can be tested in Node. UI and IndexedDB live in the template.
 // crypto.js is inlined ahead of this file by build.mjs (import lines are stripped there).
+
 
 
 
@@ -379,9 +457,10 @@ async function importPlanFile(fileText, ctx) {
   if (installed != null && plan.plan_version <= installed) {
     return fail(`גרסת התוכנית בקובץ (${plan.plan_version}) אינה חדשה מהגרסה המותקנת (${installed})`, "stale");
   }
-  const protocol = ctx.findProtocol(plan.protocol_ref.protocol_id, plan.protocol_ref.protocol_version);
-  if (!protocol) return fail("הפרוטוקול שהתוכנית מתבססת עליו אינו קיים בממשק הזה — ייתכן שנדרשת גרסה חדשה של הממשק");
-  return { ok: true, plan, planJson, protocol };
+  const base = ctx.findProtocol(plan.protocol_ref.protocol_id, plan.protocol_ref.protocol_version);
+  if (!base) return fail("הפרוטוקול שהתוכנית מתבססת עליו אינו קיים בממשק הזה — ייתכן שנדרשת גרסה חדשה של הממשק");
+  if (unknownStages(base, plan).length) return fail("התוכנית מתייחסת למודולים שאינם קיימים בגרסה הזו של הממשק");
+  return { ok: true, plan, planJson, protocol: tailorProtocol(base, plan) };
 }
 
 function validatePlan(p) {
@@ -394,8 +473,23 @@ function validatePlan(p) {
   const c = p.customizations;
   if (!c || !Array.isArray(c.reminder_times) || !c.reminder_times.every((t) => /^([01]\d|2[0-3]):[0-5]\d$/.test(t))) return "reminder_times לא תקין";
   if (!["daily", "weekly"].includes(c.task_frequency)) return "task_frequency לא תקין";
+  if (c.stage_order !== undefined && !(Array.isArray(c.stage_order) && c.stage_order.length <= 50 && c.stage_order.every((x) => typeof x === "string"))) return "stage_order לא תקין";
   return null;
 }
+
+// ---- Therapist-tailored module order ----
+// plan.customizations.stage_order (optional) selects and orders the protocol's stages. Part of the signed plan.
+function tailorProtocol(protocol, plan) {
+  const order = plan.customizations.stage_order;
+  if (!Array.isArray(order) || !order.length) return protocol;
+  const byId = new Map(protocol.stages.map((s) => [s.stage_id, s]));
+  const stages = order.map((id) => byId.get(id)).filter(Boolean);
+  return stages.length ? { ...protocol, stages } : protocol;
+}
+const unknownStages = (protocol, plan) => (plan.customizations.stage_order || []).filter((id) => !protocol.stages.some((s) => s.stage_id === id));
+
+/** Development markers are stripped from patient-facing text; the data itself keeps them for internal tests. */
+const cleanDevLabel = (t) => String(t || "").replace(/^\s*\[DEV\]\s*/, "");
 
 // ---- Protocol rules ----
 const DEV_MARKER = "DEV-PLACEHOLDER";
@@ -409,10 +503,10 @@ function streakFrom(cond) {
 }
 
 // ---- Progress state: { stageIndex, stageStartedAt, logs:[{taskId, stageId, status, at}] } ----
-const STATUS = { COMPLETE: "COMPLETE", SKIP: "SKIP", HARD_DAY: "HARD_DAY" };
+const STATUS = { COMPLETE: "COMPLETE", ATTEMPT: "ATTEMPT", SKIP: "SKIP", HARD_DAY: "HARD_DAY" };
 
 function newProgress(now = Date.now()) {
-  return { stageIndex: 0, stageStartedAt: now, logs: [] };
+  return { stageIndex: 0, stageStartedAt: now, logs: [], ledger: [] };
 }
 
 const currentStage = (protocol, prog) => protocol.stages[Math.min(prog.stageIndex, protocol.stages.length - 1)];
@@ -439,7 +533,7 @@ function tasksForNow(protocol, plan, prog, now = Date.now()) {
 function recordResult(protocol, plan, prog, taskId, status, now = Date.now(), pick = Math.random) {
   const stage = currentStage(protocol, prog);
   if (!stage.tasks.some((t) => t.task_id === taskId)) throw new Error("משימה לא קיימת בשלב הנוכחי");
-  const next = { ...prog, logs: [...prog.logs, { taskId, stageId: stage.stage_id, status, at: now }] };
+  const next = { ...prog, logs: [...prog.logs, { taskId, stageId: stage.stage_id, status, at: now }], ledger: [...(prog.ledger || []), ...taskEntries(status, now)] };
   if (status === STATUS.COMPLETE && next.stageIndex < protocol.stages.length - 1) {
     const since = next.logs.filter((l) => l.stageId === stage.stage_id && l.at >= next.stageStartedAt);
     const n = streakFrom(stage.advance_condition);
@@ -451,7 +545,7 @@ function recordResult(protocol, plan, prog, taskId, status, now = Date.now(), pi
   let message = null;
   if (plan.customizations.reinforcement_enabled) {
     const pool = protocol.reinforcement_pool || {};
-    const list = { COMPLETE: pool.on_complete, SKIP: pool.on_skip, HARD_DAY: pool.on_hard_day }[status] || [];
+    const list = { COMPLETE: pool.on_complete, ATTEMPT: pool.on_attempt || pool.on_complete, SKIP: pool.on_skip, HARD_DAY: pool.on_hard_day }[status] || [];
     message = list.length ? list[Math.floor(pick() * list.length)] : null;
   }
   return { progress: next, message };
@@ -459,10 +553,10 @@ function recordResult(protocol, plan, prog, taskId, status, now = Date.now(), pi
 
 /** Descriptive counts only; no scores or grades. */
 function summarize(prog) {
-  const c = { COMPLETE: 0, SKIP: 0, HARD_DAY: 0 };
-  for (const l of prog.logs) c[l.status]++;
+  const c = { COMPLETE: 0, ATTEMPT: 0, SKIP: 0, HARD_DAY: 0 };
+  for (const l of prog.logs) c[l.status] = (c[l.status] || 0) + 1;
   const days = new Set(prog.logs.filter((l) => l.status === STATUS.COMPLETE).map((l) => new Date(l.at).toDateString()));
-  return { completed: c.COMPLETE, skipped: c.SKIP, hardDays: c.HARD_DAY, activeDays: days.size };
+  return { completed: c.COMPLETE, attempted: c.ATTEMPT, points: totalPoints(prog.ledger), skipped: c.SKIP, hardDays: c.HARD_DAY, activeDays: days.size };
 }
 
 // ---- Calendar reminders (.ics) ----
@@ -554,7 +648,12 @@ async function openReport(file, password) {
 
 </script>
 <script>
-const PROTOCOLS = usableProtocols([{"schema_version":"1.0","protocol_id":"dev-placeholder-exposure","protocol_version":"0.0.1","title":"[DEV] פרוטוקול דמה לפיתוח בלבד","target_population":"בדיקות פיתוח","approved_by":"DEV-PLACEHOLDER — not clinically reviewed","stages":[{"stage_id":"stage-1","title":"שלב בדיקה 1","advance_condition":"3 השלמות רצופות","tasks":[{"task_id":"t1","type":"exercise","prompt":"[DEV] משימת דמה: תאר/י מצב יומיומי קל"},{"task_id":"t2","type":"exercise","prompt":"[DEV] משימת דמה: תרגיל נשימה של דקה"}]}],"reinforcement_pool":{"on_complete":["[DEV] כל הכבוד!"],"on_skip":["[DEV] ננסה שוב מחר."],"on_hard_day":["[DEV] יום קשה הוא חלק מהדרך."]}}]);
+const PROTOCOLS = usableProtocols([{"schema_version":"1.0","protocol_id":"dev-placeholder-exposure","protocol_version":"0.0.1","title":"[DEV] פרוטוקול דמה לפיתוח בלבד","target_population":"בדיקות פיתוח","approved_by":"DEV-PLACEHOLDER — not clinically reviewed","stages":[{"stage_id":"stage-1","title":"שלב בדיקה 1","advance_condition":"3 השלמות רצופות","tasks":[{"task_id":"t1","type":"exercise","prompt":"[DEV] משימת דמה: תאר/י מצב יומיומי קל"},{"task_id":"t2","type":"exercise","prompt":"[DEV] משימת דמה: תרגיל נשימה של דקה"}]}],"reinforcement_pool":{"on_complete":["[DEV] כל הכבוד!"],"on_skip":["[DEV] ננסה שוב מחר."],"on_hard_day":["[DEV] יום קשה הוא חלק מהדרך."]},"track":"adult","persona":"jessie"}]);
+const PERSONAS = [{"persona_id":"jessie","track":"adult","name":"ג'סי","tagline":"הליווי האישי שלי","greeting":"היי, טוב לראות אותך כאן","quotes":["כל צעד קטן נחשב.","אין צורך להיות מושלמים, מספיק להמשיך.","גם ניסיון הוא התקדמות."],"image":null}];
+const DEV_MODE = new URLSearchParams(location.search).has("dev"); // internal test marker only
+const persona = () => PERSONAS.find((p) => protocol && p.persona_id === protocol.persona) || PERSONAS.find((p) => p.persona_id === "jessie") || PERSONAS[0];
+const pts = (n) => (n === 1 ? "נקודה אחת" : n + " נקודות");
+const txt = cleanDevLabel; // patient-facing text never shows development markers
 const $ = (id) => document.getElementById(id);
 
 // ---------- Storage: IndexedDB (never localStorage/sessionStorage) with in-memory fallback ----------
@@ -596,7 +695,7 @@ async function loadState() {
     const p = JSON.parse(d.planJson);
     const proto = PROTOCOLS.find((x) => x.protocol_id === p.protocol_ref.protocol_id && x.protocol_version === p.protocol_ref.protocol_version);
     if (validatePlan(p) || !proto) throw new Error("state");
-    plan = p; planJson = d.planJson; protocol = proto; progress = d.progress;
+    plan = p; planJson = d.planJson; protocol = tailorProtocol(proto, p); progress = d.progress;
   } catch { announce("לא הצלחנו לפתוח את המידע השמור במכשיר הזה. אפשר למחוק אותו בהגדרות ולייבא את התוכנית מחדש.", true); }
 }
 
@@ -619,22 +718,48 @@ function download(name, text, type) {
   const a = el("a", { href: URL.createObjectURL(new Blob([text], { type })), download: name });
   document.body.append(a); a.click(); a.remove();
 }
-const STATUS_HE = { COMPLETE: "בוצע", SKIP: "דילגתי", HARD_DAY: "יום קשה" };
+const STATUS_HE = { COMPLETE: "בוצע והצלחתי", ATTEMPT: "ניסיתי", SKIP: "דילגתי", HARD_DAY: "יום קשה" };
 const fmt = (ms) => new Date(ms).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" });
 
 // ---------- Views ----------
+function brand() {
+  const p = persona();
+  for (const k of ["D", "M"]) {
+    $("brandName" + k).textContent = p.name; $("tagline" + k).textContent = p.tagline;
+    const logo = $("logo" + k); logo.replaceChildren();
+    if (p.image) logo.append(el("img", { src: p.image, alt: "" })); else logo.textContent = p.name.charAt(0) + "׳";
+  }
+}
 function show() {
   $("boot").hidden = true;
   const hasPlan = !!plan;
+  brand();
   $("nav").hidden = !hasPlan;
-  for (const v of ["setup", "today", "progress", "settings"]) $("v-" + v).hidden = true;
-  const view = !hasPlan && tab !== "settings" ? "setup" : tab;
+  for (const v of ["setup", "today", "progress", "settings", "help"]) $("v-" + v).hidden = true;
+  const view = tab === "help" ? "help" : !hasPlan && tab !== "settings" ? "setup" : tab;
   $("v-" + view).hidden = false;
-  for (const b of $("nav").querySelectorAll("button")) b.toggleAttribute("aria-current", b.dataset.tab === view) || b.removeAttribute("aria-current");
+  for (const b of $("nav").querySelectorAll("button")) b.removeAttribute("aria-current");
   for (const b of $("nav").querySelectorAll("button")) if (b.dataset.tab === view) b.setAttribute("aria-current", "page");
-  ({ setup: renderSetup, today: renderToday, progress: renderProgress, settings: renderSettings })[view]();
+  ({ setup: renderSetup, today: renderToday, progress: renderProgress, settings: renderSettings, help: renderHelp })[view]();
 }
-document.querySelectorAll("#nav button").forEach((b) => { b.onclick = () => { tab = b.dataset.tab; show(); $("main").focus(); }; });
+let tabBeforeHelp = "today";
+function openHelp() { if (tab !== "help") tabBeforeHelp = tab; tab = "help"; show(); $("main").focus(); window.scrollTo(0, 0); }
+$("helpD").onclick = openHelp; $("helpM").onclick = openHelp;
+document.querySelectorAll("#nav button").forEach((b) => { b.onclick = () => { tab = b.dataset.tab; show(); $("main").focus(); window.scrollTo(0, 0); }; });
+
+// Static, always-available safety information. Phone numbers must be re-verified before release.
+function renderHelp() {
+  const v = $("v-help"); v.replaceChildren(
+    el("div", { class: "card hero" }, el("h2", { text: "עזרה מיידית" }),
+      el("p", { text: "אם יש סכנה מיידית לחיים, או אם עולות מחשבות לפגוע בעצמכם, אתם לא צריכים להתמודד עם זה לבד. פנו עכשיו לאחת האפשרויות האלה:" }),
+      el("div", { class: "row" },
+        el("a", { class: "btn big", href: "tel:101", text: "מד״א · 101" }),
+        el("a", { class: "btn big", href: "tel:100", text: "משטרה · 100" }),
+        el("a", { class: "btn big", href: "tel:1201", text: "ער״ן, עזרה נפשית · 1201" }))),
+    el("div", { class: "card" }, el("h3", { text: "ג'סי היא מלווה ולא שירות חירום" }),
+      el("p", { class: "muted", text: "היא לא עוקבת אחריכם בזמן אמת ולא יכולה להזעיק עזרה. היא לא מחליפה את המטפל/ת שלכם. אם קשה לכם מאוד, אפשר גם לפנות למטפל/ת, לרופא/ה או לאדם קרוב ולבקש שיהיה איתכם." })),
+    btn("חזרה", () => { tab = tabBeforeHelp; show(); window.scrollTo(0, 0); }, "secondary"));
+}
 
 function storageNotice() {
   return storageMode === "memory"
@@ -642,7 +767,8 @@ function storageNotice() {
     : null;
 }
 
-const reset = (v) => v.replaceChildren(...[demo ? demoBanner() : null, storageNotice()].filter(Boolean));
+const devBanner = () => (DEV_MODE && protocol && isDevProtocol(protocol) ? el("div", { class: "banner", role: "note", text: "מצב בדיקה פנימי: פרוטוקול פיתוח, לא נבדק קלינית." }) : null);
+const reset = (v) => v.replaceChildren(...[demo ? demoBanner() : null, devBanner(), storageNotice()].filter(Boolean));
 
 // ---------- Demo mode ----------
 // Runs the REAL import pipeline (decrypt -> signature -> hash -> schema -> version -> protocol) on a plan that is
@@ -819,26 +945,51 @@ function icsCard() {
       }, "secondary")));
 }
 
+function ring(frac, size = 92) {
+  const ns = "http://www.w3.org/2000/svg", r = 38, c = 2 * Math.PI * r;
+  const svg = document.createElementNS(ns, "svg"); svg.setAttribute("viewBox", "0 0 100 100"); svg.setAttribute("width", size); svg.setAttribute("height", size); svg.setAttribute("class", "ring"); svg.setAttribute("aria-hidden", "true");
+  const mk = (stroke, dash) => { const e = document.createElementNS(ns, "circle"); for (const [k, v] of Object.entries({ cx: 50, cy: 50, r, fill: "none", "stroke-width": 11, stroke, "stroke-linecap": "round", "stroke-dasharray": dash, transform: "rotate(-90 50 50)" })) e.setAttribute(k, v); return e; };
+  svg.append(mk("var(--lilac)", `${c} ${c}`), mk("var(--accent)", `${c * frac} ${c}`));
+  const t = document.createElementNS(ns, "text"); for (const [k, v] of Object.entries({ x: 50, y: 58, "text-anchor": "middle", "font-size": 24, "font-weight": 700, fill: "var(--ink)" })) t.setAttribute(k, v);
+  t.textContent = Math.round(frac * 100) + "%"; svg.append(t); return svg;
+}
+function weekBars(logs, now = Date.now()) {
+  const days = [...Array(7)].map((_, i) => { const d = new Date(now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (6 - i)); return d; });
+  const counts = days.map((d) => logs.filter((l) => (l.status === "COMPLETE" || l.status === "ATTEMPT") && new Date(l.at).toDateString() === d.toDateString()).length);
+  const max = Math.max(1, ...counts);
+  return el("div", { class: "week", role: "img", "aria-label": "פעילות בשבעת הימים האחרונים" },
+    days.map((d, i) => el("div", {}, el("i", { class: counts[i] ? "on" : "", style: `height:${Math.max(6, (counts[i] / max) * 56)}px` }), "אבגדהוש"[d.getDay()])));
+}
+
 function renderToday() {
   const v = $("v-today"); reset(v);
-  if (isDevProtocol(protocol)) v.append(el("div", { class: "banner", role: "note", text: "זהו פרוטוקול פיתוח לבדיקות בלבד. הוא לא נבדק קלינית ואינו מיועד לשימוש טיפולי." }));
   const stage = currentStage(protocol, progress);
-  const c = plan.customizations;
+  const c = plan.customizations, pr = persona();
   const tasks = tasksForNow(protocol, plan, progress);
   const doneCount = tasks.filter((t) => t.doneStatus != null).length;
-  v.append(el("div", { class: "card hero" }, el("h2", { text: protocol.title }),
-    el("p", { text: "שלב: " + stage.title }),
-    el("div", { class: "bar", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": String(tasks.length), "aria-valuenow": String(doneCount), "aria-label": "משימות שבוצעו" }, el("i", { style: `width:${tasks.length ? Math.round((doneCount / tasks.length) * 100) : 0}%` })),
+  const frac = tasks.length ? doneCount / tasks.length : 0;
+  const quote = pr.quotes[new Date().getDate() % pr.quotes.length];
+  v.append(el("div", { class: "card hero" },
+    el("div", { class: "hero-row" },
+      el("div", {}, el("h2", { text: pr.greeting }), el("p", { class: "quote", text: "״" + quote + "״" }),
+        el("span", { class: "chip", text: "⭐ " + pts(summarize(progress).points) })),
+      pr.image ? el("img", { class: "hero-img", src: pr.image, alt: "" }) : null)));
+
+  v.append(el("div", { class: "card" }, el("h2", { text: txt(protocol.title) }),
+    el("p", { class: "muted", text: "שלב: " + txt(stage.title) }),
+    el("div", { class: "stats" }, ring(frac), weekBars(progress.logs)),
+    el("div", { class: "bar", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": String(tasks.length), "aria-valuenow": String(doneCount), "aria-label": "משימות שבוצעו" }, el("i", { style: `width:${Math.round(frac * 100)}%` })),
     el("p", { class: "muted", text: `${doneCount} מתוך ${tasks.length} משימות ${c.task_frequency === "daily" ? "להיום" : "לשבוע הזה"} · שעות מועדפות: ${c.reminder_times.join(", ")}` }),
     c.therapist_goals.length ? el("div", {}, el("h3", { text: "המטרות שלנו" }), el("ul", {}, c.therapist_goals.map((g) => el("li", { text: g })))) : null,
     c.therapist_notes ? el("p", { text: "הערה מהמטפל/ת: " + c.therapist_notes }) : null));
 
   for (const t of tasks) {
     const done = t.doneStatus != null;
-    const card = el("div", { class: "card" + (done ? " done" : "") }, el("h3", { text: t.prompt }));
-    if (done) card.append(el("p", { class: "ok", text: "נרשם: " + STATUS_HE[t.doneStatus] }));
+    const card = el("div", { class: "card" + (done ? " done" : "") }, el("h3", { text: txt(t.prompt) }));
+    if (done) card.append(el("p", { class: "ok", text: "✓ נרשם: " + STATUS_HE[t.doneStatus] }));
     else card.append(el("div", { class: "row", role: "group", "aria-label": "איך היה?" },
-      btn("ביצעתי", () => record(t.task_id, "COMPLETE")),
+      btn("ביצעתי והצלחתי", () => record(t.task_id, "COMPLETE")),
+      btn("ניסיתי", () => record(t.task_id, "ATTEMPT"), "soft"),
       btn("דילגתי", () => record(t.task_id, "SKIP"), "secondary"),
       btn("היה לי יום קשה", () => record(t.task_id, "HARD_DAY"), "secondary")));
     v.append(card);
@@ -853,7 +1004,7 @@ async function record(taskId, status) {
     const before = progress.stageIndex;
     progress = r.progress;
     await saveState();
-    announce((r.message || "נרשם. תודה.") + (progress.stageIndex > before ? " עברתם לשלב הבא." : ""));
+    announce((r.message ? txt(r.message) : "נרשם. תודה.") + (progress.stageIndex > before ? " עברתם לשלב הבא." : ""));
   } catch (e) { announce(e.message, true); }
   show();
 }
@@ -862,9 +1013,10 @@ function renderProgress() {
   const v = $("v-progress"); reset(v);
   const s = summarize(progress);
   v.append(el("div", { class: "card" }, el("h2", { text: "ההתקדמות שלי" }),
-    el("p", { text: `עד עכשיו: ${s.completed} פעמים שביצעתי משימה, ב-${s.activeDays} ימים שונים.` }),
+    el("p", { text: `עד עכשיו: ${s.completed} פעמים שביצעתי והצלחתי, ${s.attempted} פעמים שניסיתי, ב-${s.activeDays} ימים שונים.` }),
     el("p", { class: "muted", text: `${s.skipped} פעמים דילגתי · ${s.hardDays} ימים קשים. כל אלה חלק מהדרך — אין כאן ציונים.` }),
-    el("p", { text: `שלב נוכחי: ${currentStage(protocol, progress).title} (${progress.stageIndex + 1} מתוך ${protocol.stages.length})` })));
+    el("p", { text: `שלב נוכחי: ${txt(currentStage(protocol, progress).title)} (${progress.stageIndex + 1} מתוך ${protocol.stages.length})` }),
+    el("p", { text: `⭐ ${pts(s.points)}. כל ניסיון נחשב, וגם הצלחה היא רק תוספת קטנה.` })));
   const recent = [...progress.logs].reverse().slice(0, 30);
   v.append(el("div", { class: "card" }, el("h3", { text: "הרישומים האחרונים" }),
     recent.length ? el("ul", {}, recent.map((l) => el("li", { text: `${fmt(l.at)} — ${STATUS_HE[l.status]}` }))) : el("p", { class: "muted", text: "עדיין אין רישומים." })));
@@ -967,6 +1119,7 @@ async function handleLink() {
   await initIdentity();
   await loadState();
   await handleLink();
+  if (plan && progress && !demo) { const e = dailyOpenEntry(progress.ledger); if (e) { progress = { ...progress, ledger: [...(progress.ledger || []), e] }; await saveState(); } }
   show();
   addEventListener("hashchange", async () => { await handleLink(); show(); }); // link tapped while the app is already open
 })().catch((e) => { $("boot").hidden = false; $("boot").textContent = "שגיאה בטעינת הממשק: " + e.message; });
